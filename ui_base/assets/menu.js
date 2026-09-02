@@ -391,7 +391,14 @@ function makeSlider(container, {
   };
   drawDistribution(distribution);
 
-  input.oninput = () => onChange?.(paint(), input);
+  // PAINT FIRST, THEN NOTIFY. this was `onChange?.(paint(), input)` - and optional chaining does
+  // not evaluate its arguments when the call short-circuits, so a slider given no onChange never
+  // repainted and its readout sat at the initial value forever. the display is not the caller's
+  // job to trigger.
+  input.oninput = () => {
+    const value = paint();
+    onChange?.(value, input);
+  };
   input.onchange = () => onCommit?.(Number(input.value), input);
   paint();
   return {

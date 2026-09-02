@@ -98,7 +98,10 @@ body {
 
 /* ---- column grouping primitive: label-columns + col + divider, used beyond the popup now ---- */
 .label-columns { display: flex; flex-direction: row; align-items: stretch; }
-.label-columns .col { display: flex; flex-direction: column; gap: 6px; padding: 0 14px; }
+/* PADDED ON BOTH AXES. horizontal-only padding left the buttons touching the frame the moment a
+   consumer drew a border on .label-columns itself rather than nesting it in a padded panel - a
+   primitive has to look right standing on its own */
+.label-columns .col { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
 
 /* ---- nav bar: ONE BAR, not a row of folder tabs ----
    each tab used to be its own box with border-bottom removed, so the strip read as eight open
@@ -177,6 +180,22 @@ body {
 .menu-item .menu-action:hover { border-color: var(--cream); color: var(--cream); }
 .menu-add { display: flex; gap: 6px; align-items: center; }
 .menu-add input { flex: 1 1 auto; min-width: 0; }
+
+/* A TEXT FIELD IS A CONTROL, so it obeys the same rules as every other one. This class was applied
+   by the menu code and styled nowhere in the design system - the one place that did style it used
+   a 1px border, a 3px radius, a hardcoded grey and a fixed 230px width, breaking four of the six
+   rules at once, and it read as a foreign widget dropped into the panel. Matching the row height
+   of the button beside it is the visible half; the rest is why it stops looking borrowed. */
+.text-field {
+  height: var(--row-height); box-sizing: border-box;
+  background: var(--bg); color: var(--text);
+  border: 2px solid var(--grey-border); padding: 0 10px;
+  font: inherit; min-width: 0;
+}
+.text-field:focus { outline: none; border-color: var(--cream); color: var(--cream); }
+/* a placeholder must read as a PROMPT, not as content - dim enough to be obviously not a value,
+   legible enough to say what belongs there */
+.text-field::placeholder { color: var(--text-dim); opacity: 1; }
 .menu-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .menu-section .none { color: var(--text-dim); font-size: 12px; font-style: italic; }
 .menu-item:focus { outline: none; border-color: var(--cream); color: var(--cream); }

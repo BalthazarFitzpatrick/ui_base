@@ -39,13 +39,14 @@
   <p class="demo-note">
     One class for every clickable thing. A button, a list row, a filter pill and a dropdown head are
     all <code>.toggle</code> - which is what stops a page growing four kinds of button that are
-    almost the same height.
+    almost the same height. A dropdown head is a toggle with a caret and a menu attached; it is
+    <em>not</em> a separate widget, and clicking this one opens a real menu that renames it.
   </p>
   <div class="demo-row">
     <div class="toggle">plain</div>
     <div class="toggle on">selected</div>
     <div class="toggle disabled">disabled</div>
-    <div class="toggle dropdown-head"><span>dropdown head</span></div>
+    <div class="toggle dropdown-head" id="head-demo"><span>dropdown head</span></div>
   </div>
 
   <h2>columns and dividers</h2>
@@ -102,10 +103,20 @@
 <script>
 initShell({fallback: 'controls'});
 
+// the head is a plain toggle plus a menu - wired here so the example is a working control rather
+// than a picture of one
+document.getElementById('head-demo').onclick = evt =>
+  listMenu('anything', [
+    {id: 'one', label: 'first choice'},
+    {id: 'two', label: 'second choice'},
+  ], item => {
+    evt.currentTarget.innerHTML = `<span>${item.label}</span>`;
+  }).openAt(evt.currentTarget);
+
 makeSlider(document.getElementById('slider-demo'), {
   label: 'a threshold, with what the data actually answered drawn over it',
   min: 0, max: 1, step: 0.01, value: 0.35,
-  distribution: [2, 5, 9, 17, 31, 48, 60, 44, 27, 15, 9, 6, 4, 3, 2, 1, 1, 0, 0, 0],
+  distribution: [1, 1, 2, 3, 6, 9, 14, 21, 28, 37, 47, 56, 63, 68, 70, 68, 63, 56, 47, 37, 28, 21, 14, 9, 6, 3, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 });
 
 const said = text => { document.getElementById('menu-said').textContent = text; };
@@ -136,13 +147,16 @@ document.getElementById('open-rich').onclick = evt => {
   new Menu({
     title: 'every section kind',
     sections: [
-      {kind: 'add', placeholder: 'new name', button: 'add', onAdd: v => said(`added ${v}`)},
+      {kind: 'add', placeholder: 'name a new one', button: 'add',
+       onAdd: v => said(`added ${v}`)},
       {kind: 'columns', columns: [
         {label: 'axis one', items: [{id: 'x', label: 'x', on: true}, {id: 'y', label: 'y'}]},
         {label: 'axis two', items: [{id: 'p', label: 'p'}, {id: 'q', label: 'q'}]},
       ], onPick: (item, on) => said(`${item.label} ${on ? 'on' : 'off'}`)},
       {kind: 'node', node: custom},
-      {kind: 'field', placeholder: 'type something', onInput: v => said(`typed ${v}`)},
+      {kind: 'field', value: 'a filled field', placeholder: 'and an empty one below',
+       onInput: v => said(`typed ${v}`)},
+      {kind: 'field', placeholder: 'empty, showing its prompt', onInput: () => {}},
       {kind: 'buttons', buttons: [{label: 'apply', onClick: () => said('applied')}]},
     ],
   }).openAt(evt.currentTarget);
