@@ -304,7 +304,7 @@ body {
 }
 
 /* the two populations behind a slider's axis: what the model answers ON a target, and everywhere
-   else. each is scaled to its own peak, so a handful of plate responses stays visible against
+   else. each is scaled to its own peak, so a handful of strong responses stays visible against
    hundreds of thousands of background cells. */
 /* 2.5% buckets over the slider, and the bar stands on nothing: no track, no border, just the bar.
    the bars are thinner than a loading bar's height because there are forty of them across the same

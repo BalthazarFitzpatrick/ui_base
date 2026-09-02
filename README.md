@@ -173,6 +173,6 @@ reaches for them.
 
 ## Status
 
-Extracted from wowtomate's review tool, where all of this is in daily use. wowtomate still carries
-its own copies; moving it onto this package is the next step, and is what will prove the seam is
-real rather than assumed.
+Extracted from a review tool where all of this is in daily use, and consumed back by it as a package
+rather than kept as a copy — which is what proved the seam was real rather than assumed. Every
+behaviour here has been through a working application first.

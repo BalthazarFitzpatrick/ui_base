@@ -11,10 +11,13 @@ let activeTab = null;
 // owns what a given tab has to load
 let onEnterTab = () => {};
 
+// namespaced to this package, not to any one tool that uses it
+const TAB_KEY = 'ui-base:tab';
+
 function activateTab(name) {
   activeTab = name;
   // REMEMBER WHERE HE WAS. a refresh mid-drawing used to throw him back to a fixed tab
-  try { localStorage.setItem('wt-tab', name); } catch (err) { /* private window, no matter */ }
+  try { localStorage.setItem(TAB_KEY, name); } catch (err) { /* private window, no matter */ }
   document.querySelectorAll('.nav-tab').forEach(tab => {
     const active = tab.dataset.tab === name;
     tab.classList.toggle('active', active);
@@ -46,7 +49,7 @@ function initShell({onEnter = () => {}, fallback = ''} = {}) {
   });
   let start = fallback;
   try {
-    const remembered = localStorage.getItem('wt-tab');
+    const remembered = localStorage.getItem(TAB_KEY);
     if (remembered && document.querySelector(`.nav-tab[data-tab="${remembered}"]`)) {
       start = remembered;
     }
