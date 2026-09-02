@@ -34,7 +34,7 @@ from ui_base import ASSETS, read_asset, UiBaseError
 
 # in a request handler, for a path like /ui/menu.js
 try:
-    body = read_asset(name)          # refuses anything outside ASSETS
+    body = read_asset(name)  # refuses anything outside ASSETS
 except UiBaseError:
     ...  # 404
 ```

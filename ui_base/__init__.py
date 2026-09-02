@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-__all__ = ["ASSETS", "asset_names", "read_asset", "UiBaseError"]
+__all__ = ["ASSETS", "UiBaseError", "asset_names", "read_asset"]
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 
