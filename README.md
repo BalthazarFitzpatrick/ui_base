@@ -129,6 +129,34 @@ about to override something will be looking.
 
 Override by redefining the tokens, not by fighting the rules.
 
+### The palette
+
+Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. **Two hues, and
+only two**, because a colour that appears everywhere stops meaning anything.
+
+Both were **sampled, not picked** — from photographs of lichen and Devil's Field stones in Lapland
+(`colours/`). Each is the median of its photo filtered to that hue band above 22% saturation, so it
+is the lichen and the stone themselves rather than their blend with grey.
+
+| token | hex | what it is | contrast on the ground |
+|---|---|---|---|
+| `--lichen` | `#bcbf88` | median of 82k lichen pixels | **9.32** — carries text |
+| `--lichen-deep` | `#878953` | the same lichen at its most saturated | 4.88 — a fill under cream text |
+| `--stone-red` | `#996b62` | median of 39k stone pixels | 3.94 — a pip or a fill, **not text** |
+| `--stone-red-lift` | `#ad796f` | **derived**: the stone lifted in value, hue and saturation held | 4.89 |
+
+The stone is genuinely dull, which is the point of it — so `--stone-red-lift` exists for the one case
+that needs a highlight to carry text, and the CSS marks it as derived rather than sampled.
+
+`--status-good`, `--status-warn` and `--attention` point at these. Repalette by moving the pointer;
+the record of where the colour came from stays. **Nothing uses `--attention` by default** — an
+attention colour that is always on stops being one.
+
+Two more colours were sampled and deliberately left out: the deepest lichen (`#60622f`, 2.80) and the
+deepest stone (`#96594d`, 3.26). Both are lovely and both are illegible on this ground. The demo's
+colour tab shows contrast per swatch for exactly this reason — without the number, the next person
+reaches for them.
+
 ## Status
 
 Extracted from wowtomate's review tool, where all of this is in daily use. wowtomate still carries
