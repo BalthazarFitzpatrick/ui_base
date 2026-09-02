@@ -22,6 +22,19 @@
   #viewport-demo { width: 420px; height: 200px; border: 2px solid var(--grey-border);
     overflow: hidden; position: relative; }
   #viewport-demo .stage { position: absolute; transform-origin: 0 0; }
+  /* the board: big swatches, because a colour judged at 20px is not the colour you will see */
+  .swatch-group { margin-bottom: 26px; }
+  .swatch-row { display: grid; gap: 2px;
+    grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); }
+  .swatch { border: 2px solid var(--grey-border); }
+  .swatch i { display: block; height: 92px; }
+  .swatch .meta { padding: 9px 11px; background: var(--panel-row); }
+  .swatch .token { color: var(--cream); }
+  .swatch .hex { color: var(--text-dim); float: right; }
+  .swatch .what { display: block; color: var(--text-dim); font-size: 11px;
+    margin-top: 5px; line-height: 1.45; }
+  .swatch .ratio { display: block; color: var(--text-dim); font-size: 11px; margin-top: 4px; }
+  .swatch .ratio b { color: var(--text); font-weight: 500; }
   #viewport-demo .stage div { width: 600px; height: 340px;
     background: repeating-linear-gradient(45deg, #22222a 0 20px, #2b2b34 20px 40px); }
 </style>
@@ -32,6 +45,7 @@
   <div class="nav-tab active" data-tab="controls" role="tab" tabindex="0">controls</div>
   <div class="nav-tab" data-tab="menus" role="tab" tabindex="-1">menus</div>
   <div class="nav-tab" data-tab="viewport" role="tab" tabindex="-1">viewport</div>
+  <div class="nav-tab" data-tab="colour" role="tab" tabindex="-1">colour</div>
 </div>
 
 <div class="tab-panel" data-panel="controls">
@@ -107,6 +121,10 @@
     <span class="stat" id="zoom-value">100%</span>
   </div>
   <div id="viewport-demo"><div class="stage"><div></div></div></div>
+</div>
+
+<div class="tab-panel hidden" data-panel="colour">
+  <div id="colour-board"></div>
 </div>
 
 <script>
@@ -187,6 +205,86 @@ document.getElementById('open-context').oncontextmenu = evt => {
     {id: 'r', label: 'rename'}, {id: 'd', label: 'delete'},
   ], item => said(`context: ${item.label}`)).openAt({x: evt.clientX, y: evt.clientY});
 };
+
+// ---- the colour board -------------------------------------------------------------------
+// grouped by ROLE and in reading order, because "which one is which" is the question a bare
+// palette never answers. contrast against the ground is shown per swatch: without it, the reason
+// a beautiful colour is absent from the palette is invisible, and the next person reaches for it.
+const PALETTE = [
+  ['neutrals — the ground everything sits on', [
+    ['--bg', 'the page ground. everything else is judged against this'],
+    ['--panel-row', 'any control\'s own ground: a button, a row, a panel'],
+    ['--grey-border', 'every border and every divider, always 2px'],
+    ['--text', 'body text'],
+    ['--text-dim', 'secondary text: stats, hints, placeholders'],
+    ['--cream', 'emphasis, hover, and a value worth reading'],
+  ]],
+  ['decision colours — what a choice looks like', [
+    ['--accent-on', 'a selected or kept thing. the brightest surface in the system'],
+    ['--accent-on-text', 'text ON that near-white ground, near-black so it survives'],
+    ['--muted-on', 'a rejected thing. dull on purpose: rejecting is a decision, not an achievement'],
+    ['--text-on-accent-dim', 'secondary text on the accent ground, where --text-dim would vanish'],
+  ]],
+  ['hues — sampled from Lapland, the only two in the system', [
+    ['--lichen', 'lichen on the Devil\'s Field stones. median of 82k pixels of IMG_8501'],
+    ['--lichen-deep', 'the same lichen at its most saturated. a fill that can carry cream text'],
+    ['--stone-red', 'the red stone itself. median of 39k pixels of IMG_8502'],
+    ['--stone-red-lift', 'DERIVED, not sampled: the stone lifted in value, hue and saturation held, so a highlight can carry text'],
+    ['--status-good', 'points at --lichen. the semantic name, so a consumer can repoint it'],
+    ['--status-warn', 'points at --stone-red'],
+    ['--attention', 'points at --stone-red-lift. nothing uses it by default - an attention colour that is always on stops being one'],
+  ]],
+];
+
+// relative luminance, so the board can say WHY a colour is or is not in use
+function contrastOn(hex, groundHex) {
+  const channel = c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const lum = h => {
+    const n = h.replace('#', '');
+    const full = n.length === 3 ? n.split('').map(c => c + c).join('') : n;
+    const [r, g, b] = [0, 2, 4].map(i => channel(parseInt(full.slice(i, i + 2), 16) / 255));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [a, b] = [lum(hex), lum(groundHex)].sort((x, y) => y - x);
+  return (a + 0.05) / (b + 0.05);
+}
+
+function resolve(token) {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  if (!raw.startsWith('var(')) return raw;
+  return resolve(raw.slice(4, -1).trim());
+}
+
+(function buildBoard() {
+  const board = document.getElementById('colour-board');
+  const ground = resolve('--bg');
+  PALETTE.forEach(([heading, entries]) => {
+    const group = document.createElement('div');
+    group.className = 'swatch-group';
+    const label = document.createElement('div');
+    label.className = 'field-label';
+    label.textContent = heading;
+    const row = document.createElement('div');
+    row.className = 'swatch-row';
+    entries.forEach(([token, what]) => {
+      const hex = resolve(token);
+      const ratio = contrastOn(hex, ground);
+      const cell = document.createElement('div');
+      cell.className = 'swatch';
+      cell.innerHTML =
+        `<i style="background:${hex}"></i>` +
+        `<div class="meta"><span class="hex">${hex}</span>` +
+        `<span class="token">${token}</span>` +
+        `<span class="what">${what}</span>` +
+        `<span class="ratio">contrast on the ground <b>${ratio.toFixed(2)}</b>` +
+        `${ratio < 3 ? ' — too low for a pip' : ratio < 4.5 ? ' — a fill or a pip, not text' : ' — carries text'}` +
+        `</span></div>`;
+      row.appendChild(cell);
+    });
+    group.append(label, row);
+    board.appendChild(group);
+  });
+})();
 
 const wrap = document.getElementById('viewport-demo');
 const view = makePanZoom(wrap, wrap.querySelector('.stage'), {

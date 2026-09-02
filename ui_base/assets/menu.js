@@ -248,8 +248,14 @@ class Menu {
       document.addEventListener('mousedown', this._onDocDown);
       document.addEventListener('keydown', this._onKey);
     }, 0);
-    const first = this._items()[0];
-    if (first) { first.tabIndex = -1; first.focus(); }
+    // FOCUS THE PANEL, NOT A ROW. this focused the first item so arrows worked immediately, and
+    // that lit it up: :focus-visible matched a programmatic focus before any pointer interaction
+    // and stopped matching after one, so row one wore a heavy cream glow on the page's first open
+    // and a plain border every time after. Worse than the inconsistency, it highlighted a choice
+    // nobody made. _move resolves indexOf(-1) to row one in both directions, so the first arrow
+    // press still enters the list at the top.
+    this.el.tabIndex = -1;
+    this.el.focus();
     return this;
   }
 

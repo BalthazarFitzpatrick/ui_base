@@ -34,9 +34,26 @@
   /* secondary text ON the accent ground - a dim grey that still reads as secondary against
      near-white, where --text-dim would vanish */
   --text-on-accent-dim: #6a655c;
-  /* status pips. the only two hues in the system that mean something rather than decorate */
-  --status-good: #6c6;
-  --status-warn: #d84;
+  /* THE ONLY TWO HUES IN THE SYSTEM, and both mean something rather than decorate.
+     SAMPLED, NOT PICKED: from Fabian's photographs of lichen and Devil's Field stones in Lapland
+     (colours/IMG_8501.PNG, IMG_8502.PNG). Each is the median of its photo filtered to that hue
+     band above 22% saturation - the lichen and the stone themselves, not their blend with grey.
+     They replaced #6c6 and #d84, which were web shorthand sitting in an otherwise chosen palette. */
+  --lichen: #bcbf88;          /* 82k px, IMG_8501. contrast 9.32 on --bg */
+  --lichen-deep: #878953;     /* top quartile by saturation. 4.88 - a fill that carries cream text */
+  --stone-red: #996b62;       /* 39k px, IMG_8502. contrast 3.94 - a pip or a fill, NOT text */
+  /* DERIVED, not sampled: the stone is genuinely dull, which is the point of it, but 3.94 is under
+     the 4.5 a highlight needs when it carries text. Value lifted to 0.68 with the stone's own hue
+     (10deg) and saturation (0.36) held, so it is the same stone with the light on it. */
+  --stone-red-lift: #ad796f;  /* 4.89 on --bg */
+
+  /* the semantic layer points at them, so a consumer repalettes by moving the pointer without
+     losing the record of where the colour came from */
+  --status-good: var(--lichen);
+  --status-warn: var(--stone-red);
+  /* the "this really needs attention" slot. NOTHING USES IT BY DEFAULT - an attention colour that
+     is always on stops being one */
+  --attention: var(--stone-red-lift);
   /* THE GLOBAL ROW HEIGHT. every row and every button in the app is this tall - the label popup's
      rows set the standard and everything else matches it, so nothing reads as a different size
      class. change it here and the whole app follows. */
@@ -95,11 +112,10 @@ body {
 
 /* ---- focus: the popup's stepped cream glow, generalised to :focus-visible everywhere ---- */
 :focus-visible {
+  /* 2px, the same weight as every border in the system. this was a stacked 2+3+4px glow, which on
+     a control that is already 2px-bordered reads as a fat second border rather than as focus */
   outline: none;
-  box-shadow:
-    0 0 0 2px var(--cream),
-    0 0 0 3px rgba(232, 221, 195, 0.55),
-    0 0 0 4px rgba(232, 221, 195, 0.28);
+  box-shadow: 0 0 0 2px var(--cream);
 }
 
 /* ---- column grouping primitive: label-columns + col + divider, used beyond the popup now ---- */
@@ -162,6 +178,10 @@ body {
 .menu-panel.menu-columns { max-width: min(820px, 94vw); }
 .menu-column-row { display: flex; align-items: stretch; min-height: 0; }
 .menu-column-row > .menu-section { flex: 1 1 0; min-width: 210px; max-height: 60vh; overflow-y: auto; }
+
+/* the panel takes focus when it opens, so it must not inherit the focus ring - that ring is for a
+   keyboard user who tabbed somewhere, not for a menu appearing where it was asked to */
+.menu-panel:focus, .menu-panel:focus-visible { outline: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); }
 
 .menu-panel {
   /* FIXED, or it lands at the bottom of the page. .panel-floating carries only the border and
