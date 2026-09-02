@@ -134,19 +134,33 @@ Override by redefining the tokens, not by fighting the rules.
 Neutrals do the work: a charcoal ground, a cream for emphasis, and greys between. **Two hues, and
 only two**, because a colour that appears everywhere stops meaning anything.
 
-Both were **sampled, not picked** — from photographs of lichen and Devil's Field stones in Lapland
-(`colours/`). Each is the median of its photo filtered to that hue band above 22% saturation, so it
-is the lichen and the stone themselves rather than their blend with grey.
+Both come from photographs of lichen and Devil's Field stones in Lapland (`colours/`). Each started
+as the median of its photo filtered to that hue band above 22% saturation, so it is the lichen and
+the stone themselves rather than their blend with grey.
 
 | token | hex | what it is | contrast on the ground |
 |---|---|---|---|
-| `--lichen` | `#bcbf88` | median of 82k lichen pixels | **9.32** — carries text |
-| `--lichen-deep` | `#878953` | the same lichen at its most saturated | 4.88 — a fill under cream text |
+| `--lichen` | `#c7ed5f` | **corrected** from the measured median — see below | **13.37** — carries text |
+| `--lichen-deep` | `#788f39` | the same lichen dark enough to be a fill | 4.93 — a fill, **not a bed for cream** |
 | `--stone-red` | `#996b62` | median of 39k stone pixels | 3.94 — a pip or a fill, **not text** |
 | `--stone-red-lift` | `#ad796f` | **derived**: the stone lifted in value, hue and saturation held | 4.89 |
 
 The stone is genuinely dull, which is the point of it — so `--stone-red-lift` exists for the one case
 that needs a highlight to carry text, and the CSS marks it as derived rather than sampled.
+
+**The lichen is the interesting one, because sampling got it wrong.** The median of `IMG_8501` is
+`#bcbf88`, and that value is faithful to the *photograph* rather than to the lichen. Overcast light
+and phone processing flattened it: the most saturated pixel in the image is dark (`#6c6e3b`, value
+0.43) and the brightest is washed out (`#fcfebb`, saturation 0.26), so no pixel is both vibrant and
+pale. Fabian, who was standing there: *"much more vibrant, like a pale lime, the photos dont do it
+justice."* Saturation is therefore raised to 0.60 and the hue nudged 62° → 76°, judged by eye
+against the real thing. **Measurement fixed the family; only the person who saw it could fix the
+rest** — which is worth recording, because a palette that says "sampled" invites the next person to
+trust the number over the witness.
+
+`--lichen-deep` carries a correction of its own: its comment used to claim it was "a fill that
+carries cream text". Cream on it is **3.00**, well under the 4.5 text needs. The 4.88 in that
+comment was its contrast against the *ground*, mislabelled. It takes dark text, or none.
 
 `--status-good`, `--status-warn` and `--attention` point at these. Repalette by moving the pointer;
 the record of where the colour came from stays. **Nothing uses `--attention` by default** — an

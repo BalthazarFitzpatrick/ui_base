@@ -35,12 +35,23 @@
      near-white, where --text-dim would vanish */
   --text-on-accent-dim: #6a655c;
   /* THE ONLY TWO HUES IN THE SYSTEM, and both mean something rather than decorate.
-     SAMPLED, NOT PICKED: from Fabian's photographs of lichen and Devil's Field stones in Lapland
-     (colours/IMG_8501.PNG, IMG_8502.PNG). Each is the median of its photo filtered to that hue
-     band above 22% saturation - the lichen and the stone themselves, not their blend with grey.
+     FROM Fabian's photographs of lichen and Devil's Field stones in Lapland (colours/IMG_8501.PNG,
+     IMG_8502.PNG). Each started as the median of its photo filtered to that hue band above 22%
+     saturation - the lichen and the stone themselves, not their blend with grey. The stone stayed
+     as measured; the lichen did not, and the block below says exactly how far it moved and why.
      They replaced #6c6 and #d84, which were web shorthand sitting in an otherwise chosen palette. */
-  --lichen: #bcbf88;          /* 82k px, IMG_8501. contrast 9.32 on --bg */
-  --lichen-deep: #878953;     /* top quartile by saturation. 4.88 - a fill that carries cream text */
+  /* THE LICHEN IS CORRECTED, NOT SAMPLED, and the correction is the honest part. The median of
+     IMG_8501 is #bcbf88, which is faithful to the PHOTO and not to the lichen: overcast light and
+     phone processing pulled saturation down, and no pixel in the image is both vibrant and pale -
+     the most saturated is dark (#6c6e3b, val 0.43), the brightest is washed (#fcfebb, sat 0.26).
+     Fabian, who was there: "much more vibrant, like a pale lime, the photos dont do it justice".
+     So saturation is raised to 0.60 and hue nudged 62 -> 76 degrees on his eye against the real
+     thing. Sampling fixed the family; only the person who saw it could fix the rest. */
+  --lichen: #c7ed5f;          /* hue 76, sat 0.60, val 0.93. contrast 13.37 on --bg - carries text */
+  /* the same lichen dark enough to be a fill. NOT a bed for cream text - cream on it is 3.00, well
+     under the 4.5 text needs; 4.93 is its contrast against the GROUND, which an earlier comment
+     mislabelled. Put dark text on it, or use it as a bare fill. */
+  --lichen-deep: #788f39;     /* hue 76 held, val 0.56. 4.93 on --bg */
   --stone-red: #996b62;       /* 39k px, IMG_8502. contrast 3.94 - a pip or a fill, NOT text */
   /* DERIVED, not sampled: the stone is genuinely dull, which is the point of it, but 3.94 is under
      the 4.5 a highlight needs when it carries text. Value lifted to 0.68 with the stone's own hue
