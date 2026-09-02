@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ui_base</title>
+<link rel="stylesheet" href="/ui/base.css">
+<script src="/ui/menu.js"></script>
+<script src="/ui/shell.js"></script>
+<style>
+  /* the demo's own layout only - everything that carries the LOOK is in base.css */
+  body { display: flex; flex-direction: column; height: 100vh; }
+  #nav-bar { display: flex; align-items: stretch; margin: 10px 14px 0;
+    border: 2px solid var(--grey-border); }
+  .tab-panel { padding: 16px; overflow-y: auto; flex: 1 1 auto; }
+  .tab-panel.hidden { display: none; }
+  .demo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    flex-wrap: wrap; }
+  .demo-note { color: var(--text-dim); font-size: 12px; max-width: 70ch; margin: 0 0 18px; }
+  h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); margin: 24px 0 10px; font-weight: 500; }
+  h2:first-child { margin-top: 0; }
+  #viewport-demo { width: 420px; height: 200px; border: 2px solid var(--grey-border);
+    overflow: hidden; position: relative; }
+  #viewport-demo .stage { position: absolute; transform-origin: 0 0; }
+  #viewport-demo .stage div { width: 600px; height: 340px;
+    background: repeating-linear-gradient(45deg, #22222a 0 20px, #2b2b34 20px 40px); }
+</style>
+</head>
+<body>
+
+<div id="nav-bar" role="tablist">
+  <div class="nav-tab active" data-tab="controls" role="tab" tabindex="0">controls</div>
+  <div class="nav-tab" data-tab="menus" role="tab" tabindex="-1">menus</div>
+  <div class="nav-tab" data-tab="viewport" role="tab" tabindex="-1">viewport</div>
+</div>
+
+<div class="tab-panel" data-panel="controls">
+  <h2>toggle</h2>
+  <p class="demo-note">
+    One class for every clickable thing. A button, a list row, a filter pill and a dropdown head are
+    all <code>.toggle</code> - which is what stops a page growing four kinds of button that are
+    almost the same height.
+  </p>
+  <div class="demo-row">
+    <div class="toggle">plain</div>
+    <div class="toggle on">selected</div>
+    <div class="toggle disabled">disabled</div>
+    <div class="toggle dropdown-head"><span>dropdown head</span></div>
+  </div>
+
+  <h2>columns and dividers</h2>
+  <p class="demo-note">
+    A divider never touches the container's edge - 15px inset, 2px thick, the same weight as a
+    button's border. Two axes side by side is the shape a two-part choice wants: none selected on
+    an axis means that axis is not filtered, which is the same as all selected.
+  </p>
+  <div class="label-columns" style="border: 2px solid var(--grey-border); width: max-content;">
+    <div class="col"><div class="toggle on">alpha</div><div class="toggle">beta</div></div>
+    <div class="divider"></div>
+    <div class="col"><div class="toggle">one</div><div class="toggle on">two</div></div>
+  </div>
+
+  <h2>slider</h2>
+  <p class="demo-note">
+    An axis with ticks rather than a number field, because a threshold is a position in a range. It
+    takes an optional distribution drawn over the axis - the point being that "no results" and "no
+    results because your cut sits above every value" look identical until something shows the shape.
+  </p>
+  <div id="slider-demo" style="max-width: 460px;"></div>
+</div>
+
+<div class="tab-panel hidden" data-panel="menus">
+  <h2>list, columns, buttons</h2>
+  <p class="demo-note">
+    One Menu class, generic sections. It owns anchoring, viewport clamping, one-menu-at-a-time,
+    dismissal on outside click and Escape - and <em>always</em> fires onDismiss, which is what stops
+    a cancelled menu leaving a stale selection behind for the next one to sweep up.
+  </p>
+  <div class="demo-row">
+    <div class="toggle dropdown-head" id="open-list"><span>a list</span></div>
+    <div class="toggle dropdown-head" id="open-columns"><span>two columns</span></div>
+    <div class="toggle dropdown-head" id="open-rich"><span>everything at once</span></div>
+    <div class="toggle" id="open-context">right-click me</div>
+  </div>
+  <div class="stat" id="menu-said">nothing picked yet</div>
+</div>
+
+<div class="tab-panel hidden" data-panel="viewport">
+  <h2>pan and zoom</h2>
+  <p class="demo-note">
+    Wheel zooms anchored on the pointer, because zooming about a corner walks whatever you are
+    aiming at off screen. Reset centres as well as unzooming - setting the scale back to 1 and
+    leaving the pan alone reads as a button that half works.
+  </p>
+  <div class="demo-row">
+    <div class="toggle" id="zoom-reset">reset view</div>
+    <span class="stat" id="zoom-value">100%</span>
+  </div>
+  <div id="viewport-demo"><div class="stage"><div></div></div></div>
+</div>
+
+<script>
+initShell({fallback: 'controls'});
+
+makeSlider(document.getElementById('slider-demo'), {
+  label: 'a threshold, with what the data actually answered drawn over it',
+  min: 0, max: 1, step: 0.01, value: 0.35,
+  distribution: [2, 5, 9, 17, 31, 48, 60, 44, 27, 15, 9, 6, 4, 3, 2, 1, 1, 0, 0, 0],
+});
+
+const said = text => { document.getElementById('menu-said').textContent = text; };
+
+document.getElementById('open-list').onclick = evt =>
+  listMenu('pick one', [
+    {id: 'a', label: 'first thing', stats: '128 rows'},
+    {id: 'b', label: 'second thing', stats: '4 rows'},
+    {id: 'c', label: 'unavailable', disabled: true},
+  ], item => said(`picked ${item.label}`)).openAt(evt.currentTarget);
+
+document.getElementById('open-columns').onclick = evt =>
+  new Menu({
+    title: 'two lists, side by side',
+    columns: true,
+    sections: [
+      {kind: 'list', label: 'left', items: [{id: '1', label: 'alpha'}, {id: '2', label: 'beta'}],
+       onPick: item => said(`left: ${item.label}`)},
+      {kind: 'list', label: 'right', items: [{id: '3', label: 'gamma'}, {id: '4', label: 'delta'}],
+       onPick: item => said(`right: ${item.label}`)},
+    ],
+  }).openAt(evt.currentTarget);
+
+document.getElementById('open-rich').onclick = evt => {
+  const custom = document.createElement('div');
+  custom.className = 'stat';
+  custom.textContent = 'a node section: anything the kinds above do not describe';
+  new Menu({
+    title: 'every section kind',
+    sections: [
+      {kind: 'add', placeholder: 'new name', button: 'add', onAdd: v => said(`added ${v}`)},
+      {kind: 'columns', columns: [
+        {label: 'axis one', items: [{id: 'x', label: 'x', on: true}, {id: 'y', label: 'y'}]},
+        {label: 'axis two', items: [{id: 'p', label: 'p'}, {id: 'q', label: 'q'}]},
+      ], onPick: (item, on) => said(`${item.label} ${on ? 'on' : 'off'}`)},
+      {kind: 'node', node: custom},
+      {kind: 'field', placeholder: 'type something', onInput: v => said(`typed ${v}`)},
+      {kind: 'buttons', buttons: [{label: 'apply', onClick: () => said('applied')}]},
+    ],
+  }).openAt(evt.currentTarget);
+};
+
+// the same class, opened at a point instead of under a trigger
+document.getElementById('open-context').oncontextmenu = evt => {
+  evt.preventDefault();
+  listMenu('at the pointer', [
+    {id: 'r', label: 'rename'}, {id: 'd', label: 'delete'},
+  ], item => said(`context: ${item.label}`)).openAt({x: evt.clientX, y: evt.clientY});
+};
+
+const wrap = document.getElementById('viewport-demo');
+const view = makePanZoom(wrap, wrap.querySelector('.stage'), {
+  panModifier: null,
+  onChange: z => { document.getElementById('zoom-value').textContent = `${Math.round(z * 100)}%`; },
+});
+document.getElementById('zoom-reset').onclick = () => view.reset(600, 340);
+</script>
+</body>
+</html>
