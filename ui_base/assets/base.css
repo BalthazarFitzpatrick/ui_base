@@ -31,6 +31,12 @@
   /* a rejecting choice reads muted rather than bright: rejecting something is a decision, not an
      achievement, and giving it the accent makes a wall of rejections look like a wall of wins */
   --muted-on: #5c5650;
+  /* secondary text ON the accent ground - a dim grey that still reads as secondary against
+     near-white, where --text-dim would vanish */
+  --text-on-accent-dim: #6a655c;
+  /* status pips. the only two hues in the system that mean something rather than decorate */
+  --status-good: #6c6;
+  --status-warn: #d84;
   /* THE GLOBAL ROW HEIGHT. every row and every button in the app is this tall - the label popup's
      rows set the standard and everything else matches it, so nothing reads as a different size
      class. change it here and the whole app follows. */
@@ -61,7 +67,7 @@ body {
 .toggle.on .name { color: var(--accent-on-text); }
 .toggle.on .stats,
 .toggle.on .field-label,
-.toggle.on .stat { color: #6a655c; }
+.toggle.on .stat { color: var(--text-on-accent-dim); }
 .toggle:disabled, .toggle.disabled { opacity: 0.4; cursor: not-allowed; }
 .toggle:disabled:hover, .toggle.disabled:hover {
   border-color: var(--grey-border); color: var(--text);
@@ -124,6 +130,29 @@ body {
 
 .hidden { display: none !important; }
 
+/* ---- tree rows: a grouped, indentable list, from renderTree ----
+   THESE WERE ORPHANS. renderTree emits .tree-group, .tree-item, .dot and .coords, and the design
+   system styled none of them - the one consumer had its own rules, so the function rendered
+   correctly there and rendered as unstyled divs anywhere else. A framework that applies a class
+   owns its look; anything less is a copy waiting to be made. */
+.tree-group { padding: 8px 0 2px; }
+.tree-item { justify-content: flex-start; gap: 8px; white-space: nowrap; margin-bottom: 4px; }
+/* a status pip. THE ONE LEGITIMATE RADIUS in the system - a dot is a circle, which is not the
+   same thing as softening a rectangle that every other control keeps square */
+.tree-item .dot {
+  width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--grey-border);
+}
+.tree-item.marked .dot { background: var(--status-good); }
+.tree-item.needed .dot { background: var(--status-warn); }
+/* a trailing badge: secondary by definition, and pushed to the far edge so several rows' badges
+   line up as a column rather than trailing their own labels at ragged positions */
+.tree-item .coords { margin-left: auto; color: var(--text-dim); font-size: 11px; }
+.toggle.on .coords { color: var(--text-on-accent-dim); }
+
+/* the title a Menu draws above its sections */
+.popup-title { color: var(--cream); font-size: 12px; }
+
 /* ---- Menu (menu.js) ---------------------------------------------------------------
    one floating panel for every dropdown, right-click menu and picker. the visual language is
    the same .toggle/.h-divider/.label-columns the rest of the tool uses; this only adds the
@@ -174,7 +203,9 @@ body {
 }
 .menu-item .name { flex: 0 0 auto; }
 .menu-item .menu-action {
-  flex: 0 0 auto; padding: 0 8px; border: 1px solid var(--grey-border); border-radius: 2px;
+  /* 2px and square like every other control - a 1px rounded pill beside 2px square buttons reads
+     as a different system, which is rule 3 and the reason it is a rule */
+  flex: 0 0 auto; padding: 0 8px; border: 2px solid var(--grey-border);
   font-size: 11px; color: var(--text-dim);
 }
 .menu-item .menu-action:hover { border-color: var(--cream); color: var(--cream); }
@@ -223,11 +254,11 @@ body {
 /* THE PIPE. 5px of cream, full height of the axis - the one bright thing in the control */
 .slider-axis input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 5px; height: 18px; border-radius: 1px;
+  width: 5px; height: 18px;
   background: var(--cream); border: none; cursor: ew-resize;
 }
 .slider-axis input[type="range"]::-moz-range-thumb {
-  width: 5px; height: 18px; border-radius: 1px;
+  width: 5px; height: 18px;
   background: var(--cream); border: none; cursor: ew-resize;
 }
 .slider-axis input[type="range"]:focus { outline: none; }

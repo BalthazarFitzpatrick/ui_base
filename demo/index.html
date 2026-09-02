@@ -61,6 +61,15 @@
     <div class="col"><div class="toggle">one</div><div class="toggle on">two</div></div>
   </div>
 
+  <h2>tree</h2>
+  <p class="demo-note">
+    A grouped list with a status pip and trailing badges. Rows are <code>.toggle</code> like
+    everything else; the badges push to the far edge so several rows' badges line up as a column
+    rather than trailing their labels at ragged positions.
+  </p>
+  <div id="tree-demo" style="max-width: 340px; border: 2px solid var(--grey-border);
+       padding: 0 10px 8px;"></div>
+
   <h2>slider</h2>
   <p class="demo-note">
     An axis with ticks rather than a number field, because a threshold is a position in a range. It
@@ -118,6 +127,15 @@ makeSlider(document.getElementById('slider-demo'), {
   min: 0, max: 1, step: 0.01, value: 0.35,
   distribution: [1, 1, 2, 3, 6, 9, 14, 21, 28, 37, 47, 56, 63, 68, 70, 68, 63, 56, 47, 37, 28, 21, 14, 9, 6, 3, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 });
+
+renderTree(document.getElementById('tree-demo'), [
+  {heading: 'mandatory'},
+  {id: 'a', label: 'target frame', state: {marked: true}, badges: ['1729, 1500']},
+  {id: 'b', label: 'player health', state: {marked: true}, badges: ['245, 36']},
+  {heading: 'optional'},
+  {id: 'c', label: 'cast bar', state: {needed: true}, badges: ['not marked']},
+  {id: 'd', label: 'combo points', dot: false},
+]);
 
 const said = text => { document.getElementById('menu-said').textContent = text; };
 
