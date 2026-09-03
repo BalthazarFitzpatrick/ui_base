@@ -371,12 +371,33 @@ function makeSlider(container, {
   container.appendChild(ends);
 
   const readout = ends.querySelector('.slider-value');
+  const minLabel = ends.firstElementChild;
+  const maxLabel = ends.lastElementChild;
+  // MONOSPACE, so a character count is a real width rather than a guess - app.css sets the page
+  // font to SF Mono/Menlo throughout. ~0.62em per glyph at this weight; the end labels run 10.5px,
+  // the readout 11.5px (see .slider-ends / .slider-ends .slider-value in app.css).
+  const charWidth = text => text.length * 10.5 * 0.62;
+  const readoutWidth = text => text.length * 11.5 * 0.62;
   const paint = () => {
     const v = Number(input.value);
-    readout.textContent = format(v);
-    // the readout tracks the handle rather than sitting still in the middle
+    const text = format(v);
+    readout.textContent = text;
+    // the readout tracks the handle, CLAMPED away from the end labels it shares a row with.
+    //
+    // WHY NOT offsetWidth, tried first and still wrong: makeSlider runs at page load, for every
+    // slider on the page, including ones on tabs that start `.hidden` (display:none) until
+    // clicked - this one included, since only "find" is visible at load. offsetWidth inside a
+    // display:none subtree reads 0, so the very first paint() baked in a near-zero margin and
+    // nothing ever repainted it, because no input event fires on a slider nobody has touched yet.
+    // A measurement doesn't have a display:none problem if it never asks the DOM to lay out.
     const pct = (v - min) / (max - min);
-    readout.style.left = `calc(${pct * 100}% )`;
+    const raw = pct * ends.clientWidth || pct * container.clientWidth || pct * 190;
+    const gap = 6;
+    const low = charWidth(minLabel.textContent) + gap + readoutWidth(text) / 2;
+    const width = ends.clientWidth || container.clientWidth || 190;
+    const high = width - charWidth(maxLabel.textContent) - gap - readoutWidth(text) / 2;
+    const clamped = Math.max(low, Math.min(high, raw));
+    readout.style.left = `${clamped}px`;
     return v;
   };
   // counts span orders of magnitude - hundreds of thousands of quiet cells against a handful of
