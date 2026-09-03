@@ -445,8 +445,17 @@ window.makeSlider = makeSlider;
 //
 // the stage is transformed, not the image, so anything else inside it (an overlay canvas, marks)
 // moves with the picture and no coordinate conversion has to be got right at every zoom level.
+// `fit` decides what reset() means:
+//   'width'   - fit the width, never past 1:1. the interface tab wants this: a rect is marked on a
+//               3420-wide capture and blowing a small screenshot up past its own pixels would
+//               invite marking against interpolated ones.
+//   'contain' - fit BOTH axes and scale UP when the frame is smaller than the viewport, so the
+//               picture is as large as it can be with all of it visible. Fabian, on the find tab:
+//               "fill width (or height) as far as it gets without the other one flowing over the
+//               screen border" - a 768-wide frame in a 1900-wide panel sat letterboxed and small
+//               under the 'width' rule, because that rule caps at 1:1 and never grows anything.
 function makePanZoom(wrap, stage, {
-  onChange = null, maxZoom = 12, minZoom = 0.05, panModifier = 'shift',
+  onChange = null, maxZoom = 12, minZoom = 0.05, panModifier = 'shift', fit = 'width',
 } = {}) {
   let zoom = 1;
   let panX = 0;
@@ -460,8 +469,16 @@ function makePanZoom(wrap, stage, {
   // RESET MEANS CENTRED, not just unzoomed. setting the scale back to 1 and leaving the pan alone
   // left the picture wherever it had been dragged to, which reads as the button half working.
   const reset = (naturalWidth = 0, naturalHeight = 0) => {
-    // fit the width, never blow it up past 1:1 on reset
-    zoom = naturalWidth ? Math.min(1, wrap.clientWidth / naturalWidth) : 1;
+    if (!naturalWidth) {
+      zoom = 1;
+    } else if (fit === 'contain' && naturalHeight) {
+      // the binding axis wins and the picture may grow past 1:1 - see `fit` above. clamped to the
+      // same bounds the wheel obeys so reset can never land somewhere zooming cannot return from
+      const both = Math.min(wrap.clientWidth / naturalWidth, wrap.clientHeight / naturalHeight);
+      zoom = Math.min(maxZoom, Math.max(minZoom, both));
+    } else {
+      zoom = Math.min(1, wrap.clientWidth / naturalWidth);
+    }
     const width = (naturalWidth || stage.offsetWidth) * zoom;
     const height = (naturalHeight || stage.offsetHeight) * zoom;
     panX = (wrap.clientWidth - width) / 2;
