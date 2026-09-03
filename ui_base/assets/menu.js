@@ -127,10 +127,14 @@ class Menu {
       row.className = 'menu-buttons';
       section.buttons.forEach(spec => {
         const btn = document.createElement('div');
-        btn.className = 'toggle' + (spec.enabled === false ? ' disabled' : '');
+        // `tone` is 'adds' or 'removes' - the two verbs that get a colour, see app.css
+        btn.className = ['toggle', spec.tone, spec.enabled === false ? 'disabled' : '']
+          .filter(Boolean).join(' ');
         btn.textContent = spec.label;
         btn.dataset.id = spec.id || spec.label;
-        if (spec.enabled !== false) btn.onclick = () => spec.onClick?.(this);
+        // CHECKED AT CLICK, not at build. an apply button starts disabled and goes live as rows
+        // are picked, and a handler attached only to the enabled version can never be given one
+        btn.onclick = () => { if (!btn.classList.contains('disabled')) spec.onClick?.(this); };
         row.appendChild(btn);
       });
       wrap.appendChild(row);
@@ -169,12 +173,20 @@ class Menu {
       rule.className = 'h-divider';
       el.appendChild(rule);
     }
-    const body = this.columns ? document.createElement('div') : el;
-    if (this.columns) {
-      body.className = 'menu-column-row';
-      el.appendChild(body);
-    }
-    this.sections.forEach((section, i) => {
+    // THE BODY IS ALWAYS ITS OWN ELEMENT, columns or not. it used to be `el` itself for a stacked
+    // menu, which meant the whole panel scrolled - title, list and buttons together - so a long
+    // list pushed its own apply button off the bottom and scrolled the heading out of sight on the
+    // way to reaching it. Fabian: "if the dialogue is too long, it should be scrollable in the
+    // middle". title and footer are pinned; only this scrolls (see .menu-body in app.css).
+    const body = document.createElement('div');
+    body.className = this.columns ? 'menu-column-row' : 'menu-body';
+    el.appendChild(body);
+
+    // a `buttons` section is a FOOTER wherever it is declared - it is the panel's verbs, and a verb
+    // that scrolls away with the list is one you have to hunt for
+    const stacked = this.sections.filter(s => s.kind !== 'buttons');
+    const footer = this.sections.filter(s => s.kind === 'buttons');
+    stacked.forEach((section, i) => {
       if (i && section.rule !== false) {
         const rule = document.createElement('div');
         // a column split gets the VERTICAL rule, the same 2px inset one used everywhere else
@@ -183,7 +195,22 @@ class Menu {
       }
       body.appendChild(this._section(section));
     });
+    footer.forEach(section => {
+      if (stacked.length || footer.indexOf(section)) {
+        const rule = document.createElement('div');
+        rule.className = 'h-divider';
+        el.appendChild(rule);
+      }
+      el.appendChild(this._section(section));
+    });
     return el;
+  }
+
+  // a multi-select menu's apply button lives or dies by what is ticked, and only the caller knows
+  // when that changed - so it says so rather than the class re-deriving it
+  setButtonEnabled(id, on) {
+    const btn = this.el?.querySelector(`.menu-buttons .toggle[data-id="${id}"]`);
+    btn?.classList.toggle('disabled', !on);
   }
 
   // ---- keyboard ------------------------------------------------------------------
