@@ -1,0 +1,427 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ui_base</title>
+<link rel="stylesheet" href="/ui/base.css">
+<script src="/ui/menu.js"></script>
+<script src="/ui/shell.js"></script>
+<script src="/ui/select.js"></script>
+<style>
+  /* the demo's own layout only - everything that carries the LOOK is in base.css */
+  body { display: flex; flex-direction: column; height: 100vh; }
+  #nav-bar { display: flex; align-items: stretch; margin: 10px 14px 0;
+    border: 2px solid var(--grey-border); }
+  .tab-panel { padding: 16px; overflow-y: auto; flex: 1 1 auto; }
+  .tab-panel.hidden { display: none; }
+  .demo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    flex-wrap: wrap; }
+  .demo-note { color: var(--text-dim); font-size: 12px; max-width: 70ch; margin: 0 0 18px; }
+  h2 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); margin: 24px 0 10px; font-weight: 500; }
+  h2:first-child { margin-top: 0; }
+  #viewport-demo { width: 420px; height: 200px; border: 2px solid var(--grey-border);
+    overflow: hidden; position: relative; }
+  #viewport-demo .stage { position: absolute; transform-origin: 0 0; }
+  /* the board: big swatches, because a colour judged at 20px is not the colour you will see */
+  .swatch-group { margin-bottom: 26px; }
+  .swatch-row { display: grid; gap: 2px;
+    grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); }
+  .swatch { border: 2px solid var(--grey-border); }
+  .swatch i { display: block; height: 92px; }
+  .swatch .meta { padding: 9px 11px; background: var(--panel-row); }
+  .swatch .token { color: var(--cream); }
+  .swatch .hex { color: var(--text-dim); float: right; }
+  .swatch .what { display: block; color: var(--text-dim); font-size: 11px;
+    margin-top: 5px; line-height: 1.45; }
+  .swatch .ratio { display: block; color: var(--text-dim); font-size: 11px; margin-top: 4px; }
+  .swatch .ratio b { color: var(--text); font-weight: 500; }
+  #viewport-demo .stage div { width: 600px; height: 340px;
+    background: repeating-linear-gradient(45deg, #22222a 0 20px, #2b2b34 20px 40px); }
+</style>
+</head>
+<body>
+
+<div id="nav-bar" role="tablist">
+  <div class="nav-tab active" data-tab="controls" role="tab" tabindex="0">controls</div>
+  <div class="nav-tab" data-tab="menus" role="tab" tabindex="-1">menus</div>
+  <div class="nav-tab" data-tab="viewport" role="tab" tabindex="-1">viewport</div>
+  <div class="nav-tab" data-tab="colour" role="tab" tabindex="-1">colour</div>
+</div>
+
+<div class="tab-panel" data-panel="controls">
+  <h2>toggle</h2>
+  <p class="demo-note">
+    One class for every clickable thing. A button, a list row, a filter pill and a dropdown head are
+    all <code>.toggle</code> - which is what stops a page growing four kinds of button that are
+    almost the same height. A dropdown head is a toggle with a caret and a menu attached; it is
+    <em>not</em> a separate widget, and clicking this one opens a real menu that renames it.
+  </p>
+  <div class="demo-row">
+    <div class="toggle">plain</div>
+    <div class="toggle on">selected</div>
+    <div class="toggle disabled">disabled</div>
+    <div class="toggle dropdown-head" id="head-demo"><span>dropdown head</span></div>
+  </div>
+
+  <h2>what a button DOES, in colour</h2>
+  <p class="demo-note">
+    Only two verbs get a colour, because only two are worth stopping for: one <em>adds</em>, one
+    <em>takes away</em>. Everything else stays grey on purpose - a palette where every button is
+    coloured is a palette that has stopped saying anything. The colour sits on the border and the
+    text at rest and only fills on hover, so a row still reads as a row of buttons rather than a row
+    of warnings. Disabled wins over both, whatever verb it carries.
+  </p>
+  <div class="demo-row">
+    <div class="toggle adds">promote</div>
+    <div class="toggle removes">not a class</div>
+    <div class="toggle adds disabled">adds, disabled</div>
+    <div class="toggle removes disabled">removes, disabled</div>
+    <span class="help-tip" id="tip-demo" title="hover me, click to pin">?</span>
+  </div>
+
+  <h2>columns and dividers</h2>
+  <p class="demo-note">
+    A divider never touches the container's edge - 15px inset, 2px thick, the same weight as a
+    button's border. Two axes side by side is the shape a two-part choice wants: none selected on
+    an axis means that axis is not filtered, which is the same as all selected.
+  </p>
+  <div class="label-columns" style="border: 2px solid var(--grey-border); width: max-content;">
+    <div class="col"><div class="toggle on">alpha</div><div class="toggle">beta</div></div>
+    <div class="divider"></div>
+    <div class="col"><div class="toggle">one</div><div class="toggle on">two</div></div>
+  </div>
+
+  <h2>tree</h2>
+  <p class="demo-note">
+    A grouped list with a status pip and trailing badges. Rows are <code>.toggle</code> like
+    everything else; the badges push to the far edge so several rows' badges line up as a column
+    rather than trailing their labels at ragged positions.
+  </p>
+  <div id="tree-demo" style="max-width: 340px; border: 2px solid var(--grey-border);
+       padding: 0 10px 8px;"></div>
+
+  <h2>scrollbars</h2>
+  <p class="demo-note">
+    Drawn, not borrowed. macOS's overlay bar fades in over the content in a grey belonging to no
+    palette; this is a track that is always there and a block that rides it, square like everything
+    else. <strong>Measured:</strong> Chromium 151 no longer renders <code>::-webkit-scrollbar</code>
+    at all, so <code>scrollbar-width</code> and <code>scrollbar-color</code> lead and the webkit
+    block is a fallback for older engines. Two things the standard property cannot express, and this
+    therefore does not have: a 2px track line, and a thumb that lightens on hover.
+  </p>
+  <div style="height: 120px; overflow-y: auto; border: 2px solid var(--grey-border);
+              padding: 10px; max-width: 420px;">
+    <div style="height: 420px; color: var(--text-dim);">
+      scroll me &mdash; the bar to the right is the one base.css draws.<br><br>
+      It is the same bar every panel, menu body and long list in the system gets, so nothing has to
+      opt in and nothing looks like a different application.
+    </div>
+  </div>
+
+  <h2>slider</h2>
+  <p class="demo-note">
+    An axis with ticks rather than a number field, because a threshold is a position in a range. It
+    takes an optional distribution drawn over the axis - the point being that "no results" and "no
+    results because your cut sits above every value" look identical until something shows the shape.
+  </p>
+  <div id="slider-demo" style="max-width: 460px;"></div>
+</div>
+
+<div class="tab-panel hidden" data-panel="menus">
+  <h2>list, columns, buttons</h2>
+  <p class="demo-note">
+    One Menu class, generic sections. It owns anchoring, viewport clamping, one-menu-at-a-time,
+    dismissal on outside click and Escape - and <em>always</em> fires onDismiss, which is what stops
+    a cancelled menu leaving a stale selection behind for the next one to sweep up.
+  </p>
+  <div class="demo-row">
+    <div class="toggle dropdown-head" id="open-list"><span>a list</span></div>
+    <div class="toggle dropdown-head" id="open-columns"><span>two columns</span></div>
+    <div class="toggle dropdown-head" id="open-rich"><span>everything at once</span></div>
+    <div class="toggle" id="open-context">right-click me</div>
+  </div>
+  <div class="stat" id="menu-said">nothing picked yet</div>
+
+  <h2>rows that carry numbers</h2>
+  <p class="demo-note">
+    A menu row is a <code>.toggle</code> with a name and a <code>.stats</code> badge. <strong>The
+    NAME truncates, not the stats</strong> - it used to be the other way round, and a long name
+    pushed the row past the panel and squeezed the numbers to nothing. The stats are why you are
+    reading the row, so they hold their width and pin right, which also lines them up down the
+    column instead of trailing each name at a ragged position.
+  </p>
+  <div class="menu-panel panel-inline" style="position: static; max-width: 460px;">
+    <div class="menu-section">
+      <div class="toggle menu-item"><span class="name">short_name</span><span class="stats">144f &middot; 126d &middot; 126c</span></div>
+      <div class="toggle menu-item on"><span class="name">selected_row</span><span class="stats">86f &middot; 67d</span></div>
+      <div class="toggle menu-item"><span class="name">a_name_long_enough_that_it_has_to_be_truncated_somewhere</span><span class="stats">43f &middot; 56d &middot; 27c &middot; 28n</span></div>
+    </div>
+  </div>
+
+  <h2>modal: the one popup NOT anchored to what opened it</h2>
+  <p class="demo-note">
+    Every other menu hangs off its trigger, which is right for a choice you can walk away from. This
+    one is centred on a dimmed backdrop because it is a decision you must answer before anything
+    else happens - overwrite, merge, or abandon. The three buttons carry the verbs above: green
+    adds, red takes away, grey is the harmless exit, and Escape always picks the harmless one.
+  </p>
+  <div class="demo-row"><div class="toggle" id="open-modal">open the modal</div></div>
+
+  <h2>selection: click, cmd+click, shift+drag, right-click</h2>
+  <p class="demo-note">
+    Click picks one, cmd/ctrl+click adds, shift+drag draws a net, right-click acts on what you pointed at. A net, not a range. Selecting first-to-last through a
+    rendered order only does what you want when the list happens to be sorted the way you are
+    reading it; the mismatches you can actually see sit together on SCREEN, so a rectangle you drag
+    is the honest gesture. The band is fixed-positioned and hit-tests in viewport coordinates, so no
+    scroll offset or container origin has to be got right.
+  </p>
+  <div id="band-area" style="display: grid; grid-template-columns: repeat(8, 54px); gap: 6px;
+       padding: 10px; border: 2px solid var(--grey-border); max-width: 520px; user-select: none;">
+  </div>
+  <div class="stat" id="band-said" style="margin-top: 8px;">nothing caught</div>
+</div>
+
+<div class="tab-panel hidden" data-panel="viewport">
+  <h2>pan and zoom</h2>
+  <p class="demo-note">
+    Wheel zooms anchored on the pointer, because zooming about a corner walks whatever you are
+    aiming at off screen. Reset centres as well as unzooming - setting the scale back to 1 and
+    leaving the pan alone reads as a button that half works.
+  </p>
+  <div class="demo-row">
+    <div class="toggle" id="zoom-reset">reset view</div>
+    <span class="stat" id="zoom-value">100%</span>
+  </div>
+  <div id="viewport-demo"><div class="stage"><div></div></div></div>
+</div>
+
+<div class="tab-panel hidden" data-panel="colour">
+  <div id="colour-board"></div>
+</div>
+
+<script>
+initShell({fallback: 'controls'});
+
+// the head is a plain toggle plus a menu - wired here so the example is a working control rather
+// than a picture of one
+document.getElementById('head-demo').onclick = evt =>
+  listMenu('anything', [
+    {id: 'one', label: 'first choice'},
+    {id: 'two', label: 'second choice'},
+  ], item => {
+    evt.currentTarget.innerHTML = `<span>${item.label}</span>`;
+  }).openAt(evt.currentTarget);
+
+makeSlider(document.getElementById('slider-demo'), {
+  label: 'a threshold, with what the data actually answered drawn over it',
+  min: 0, max: 1, step: 0.01, value: 0.35,
+  distribution: [1, 1, 2, 3, 6, 9, 14, 21, 28, 37, 47, 56, 63, 68, 70, 68, 63, 56, 47, 37, 28, 21, 14, 9, 6, 3, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+});
+
+renderTree(document.getElementById('tree-demo'), [
+  {heading: 'mandatory'},
+  {id: 'a', label: 'target frame', state: {marked: true}, badges: ['1729, 1500']},
+  {id: 'b', label: 'player health', state: {marked: true}, badges: ['245, 36']},
+  {heading: 'optional'},
+  {id: 'c', label: 'cast bar', state: {needed: true}, badges: ['not marked']},
+  {id: 'd', label: 'combo points', dot: false},
+]);
+
+const said = text => { document.getElementById('menu-said').textContent = text; };
+
+document.getElementById('open-list').onclick = evt =>
+  listMenu('pick one', [
+    {id: 'a', label: 'first thing', stats: '128 rows'},
+    {id: 'b', label: 'second thing', stats: '4 rows'},
+    {id: 'c', label: 'unavailable', disabled: true},
+  ], item => said(`picked ${item.label}`)).openAt(evt.currentTarget);
+
+document.getElementById('open-columns').onclick = evt =>
+  new Menu({
+    title: 'two lists, side by side',
+    columns: true,
+    sections: [
+      {kind: 'list', label: 'left', items: [{id: '1', label: 'alpha'}, {id: '2', label: 'beta'}],
+       onPick: item => said(`left: ${item.label}`)},
+      {kind: 'list', label: 'right', items: [{id: '3', label: 'gamma'}, {id: '4', label: 'delta'}],
+       onPick: item => said(`right: ${item.label}`)},
+    ],
+  }).openAt(evt.currentTarget);
+
+document.getElementById('open-rich').onclick = evt => {
+  const custom = document.createElement('div');
+  custom.className = 'stat';
+  custom.textContent = 'a node section: anything the kinds above do not describe';
+  new Menu({
+    title: 'every section kind',
+    sections: [
+      {kind: 'add', placeholder: 'name a new one', button: 'add',
+       onAdd: v => said(`added ${v}`)},
+      {kind: 'columns', columns: [
+        {label: 'axis one', items: [{id: 'x', label: 'x', on: true}, {id: 'y', label: 'y'}]},
+        {label: 'axis two', items: [{id: 'p', label: 'p'}, {id: 'q', label: 'q'}]},
+      ], onPick: (item, on) => said(`${item.label} ${on ? 'on' : 'off'}`)},
+      {kind: 'node', node: custom},
+      {kind: 'field', value: 'a filled field', placeholder: 'and an empty one below',
+       onInput: v => said(`typed ${v}`)},
+      {kind: 'field', placeholder: 'empty, showing its prompt', onInput: () => {}},
+      {kind: 'buttons', buttons: [{label: 'apply', onClick: () => said('applied')}]},
+    ],
+  }).openAt(evt.currentTarget);
+};
+
+// the same class, opened at a point instead of under a trigger
+document.getElementById('open-context').oncontextmenu = evt => {
+  evt.preventDefault();
+  listMenu('at the pointer', [
+    {id: 'r', label: 'rename'}, {id: 'd', label: 'delete'},
+  ], item => said(`context: ${item.label}`)).openAt({x: evt.clientX, y: evt.clientY});
+};
+
+// ---- the colour board -------------------------------------------------------------------
+// grouped by ROLE and in reading order, because "which one is which" is the question a bare
+// palette never answers. contrast against the ground is shown per swatch: without it, the reason
+// a beautiful colour is absent from the palette is invisible, and the next person reaches for it.
+const PALETTE = [
+  ['neutrals — the ground everything sits on', [
+    ['--bg', 'the page ground. everything else is judged against this'],
+    ['--panel-row', 'any control\'s own ground: a button, a row, a panel'],
+    ['--grey-border', 'every border and every divider, always 2px'],
+    ['--text', 'body text'],
+    ['--text-dim', 'secondary text: stats, hints, placeholders'],
+    ['--cream', 'emphasis, hover, and a value worth reading'],
+  ]],
+  ['decision colours — what a choice looks like', [
+    ['--accent-on', 'a selected or kept thing. the brightest surface in the system'],
+    ['--accent-on-text', 'text ON that near-white ground, near-black so it survives'],
+    ['--muted-on', 'a rejected thing. dull on purpose: rejecting is a decision, not an achievement'],
+    ['--text-on-accent-dim', 'secondary text on the accent ground, where --text-dim would vanish'],
+  ]],
+  ['hues — the only two in the system', [
+    ['--lichen', 'CORRECTED, not sampled: the median of 82k px of the photo was #bcbf88, faithful to the photo and not to the lichen. hue nudged 62 to 76 and saturation raised to 0.60 on Balthazar Fitzpatrick\'s eye against the real thing'],
+    ['--lichen-deep', 'the same lichen dark enough to be a fill. NOT a bed for cream text - cream on it is 3.00. 4.93 is against the ground'],
+    ['--stone-red', 'the red stone itself. median of 39k sampled pixels'],
+    ['--stone-red-lift', 'DERIVED, not sampled: the stone lifted in value, hue and saturation held, so a highlight can carry text'],
+    ['--status-good', 'points at --lichen. the semantic name, so a consumer can repoint it'],
+    ['--status-warn', 'points at --stone-red'],
+    ['--attention', 'points at --stone-red-lift. nothing uses it by default - an attention colour that is always on stops being one'],
+  ]],
+];
+
+// relative luminance, so the board can say WHY a colour is or is not in use
+function contrastOn(hex, groundHex) {
+  const channel = c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const lum = h => {
+    const n = h.replace('#', '');
+    const full = n.length === 3 ? n.split('').map(c => c + c).join('') : n;
+    const [r, g, b] = [0, 2, 4].map(i => channel(parseInt(full.slice(i, i + 2), 16) / 255));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [a, b] = [lum(hex), lum(groundHex)].sort((x, y) => y - x);
+  return (a + 0.05) / (b + 0.05);
+}
+
+function resolve(token) {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  if (!raw.startsWith('var(')) return raw;
+  return resolve(raw.slice(4, -1).trim());
+}
+
+(function buildBoard() {
+  const board = document.getElementById('colour-board');
+  const ground = resolve('--bg');
+  PALETTE.forEach(([heading, entries]) => {
+    const group = document.createElement('div');
+    group.className = 'swatch-group';
+    const label = document.createElement('div');
+    label.className = 'field-label';
+    label.textContent = heading;
+    const row = document.createElement('div');
+    row.className = 'swatch-row';
+    entries.forEach(([token, what]) => {
+      const hex = resolve(token);
+      const ratio = contrastOn(hex, ground);
+      const cell = document.createElement('div');
+      cell.className = 'swatch';
+      cell.innerHTML =
+        `<i style="background:${hex}"></i>` +
+        `<div class="meta"><span class="hex">${hex}</span>` +
+        `<span class="token">${token}</span>` +
+        `<span class="what">${what}</span>` +
+        `<span class="ratio">contrast on the ground <b>${ratio.toFixed(2)}</b>` +
+        `${ratio < 3 ? ' — too low for a pip' : ratio < 4.5 ? ' — a fill or a pip, not text' : ' — carries text'}` +
+        `</span></div>`;
+      row.appendChild(cell);
+    });
+    group.append(label, row);
+    board.appendChild(group);
+  });
+})();
+
+const wrap = document.getElementById('viewport-demo');
+const view = makePanZoom(wrap, wrap.querySelector('.stage'), {
+  panModifier: null,
+  onChange: z => { document.getElementById('zoom-value').textContent = `${Math.round(z * 100)}%`; },
+});
+document.getElementById('zoom-reset').onclick = () => view.reset(600, 340);
+
+// ---- help tip: hover shows, click pins. a tip that vanishes while you are reading it is worse
+// than no tip, which is why pinning exists at all
+const tip = document.getElementById('tip-demo');
+tip.onclick = () => tip.classList.toggle('pinned');
+
+// ---- the modal. ESCAPE PICKS THE HARMLESS ONE, always - a dialogue you can only leave by
+// choosing is a dialogue that gets answered wrongly under time pressure
+document.getElementById('open-modal').onclick = () => {
+  const back = document.createElement('div');
+  back.className = 'modal-backdrop';
+  back.innerHTML = `
+    <div class="panel-floating modal-dialog">
+      <div class="popup-title">plates already exists</div>
+      <div class="h-divider"></div>
+      <div class="modal-body">
+        it holds 54 rows. this promote has 138 to add.<br>
+        merging keeps every row from a source this pool does not hold.
+      </div>
+      <div class="menu-buttons modal-buttons">
+        <div class="toggle adds">merge into</div>
+        <div class="toggle removes">overwrite</div>
+        <div class="toggle">abandon</div>
+      </div>
+    </div>`;
+  const close = () => { back.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  back.querySelectorAll('.toggle').forEach(b => { b.onclick = close; });
+  back.onclick = e => { if (e.target === back) close(); };
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(back);
+};
+
+// ---- selection: THE DEMO USES THE SHARED COMPONENT, which is the only honest way to demo it.
+// click picks, cmd/ctrl+click adds, shift+drag nets, right-click targets what you pointed at.
+(() => {
+  const area = document.getElementById('band-area');
+  const said = document.getElementById('band-said');
+  for (let i = 0; i < 32; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'toggle select-item';
+    cell.dataset.name = `cell-${i + 1}`;
+    cell.style.height = '38px';
+    cell.textContent = i + 1;
+    area.appendChild(cell);
+  }
+  makeSelection(area, {
+    onChange: keys => { said.textContent = keys.length ? `${keys.length} selected` : 'nothing selected'; },
+    onContext: (keys, x, y) => {
+      new Menu({
+        title: `${keys.length} selected`,
+        sections: [{kind: 'list', items: [{id: 'a', label: 'assign a class'}, {id: 'b', label: 'not a class'}],
+                    onPick: pick => { said.textContent = `${pick} on ${keys.length}`; }}],
+      }).openAt({x, y});
+    },
+  });
+})();
+</script>
+</body>
+</html>

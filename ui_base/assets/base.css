@@ -1,0 +1,426 @@
+/* ui_base: the visual language every component here speaks.
+ *
+ * SIX RULES CARRY THE WHOLE LOOK, and they are worth knowing before overriding anything:
+ *
+ *   1. ONE ROW HEIGHT, app-wide (--row-height). Every row and every button is that tall, so
+ *      nothing reads as a different size class. Change it here and everything follows.
+ *   2. ONE CLICKABLE CLASS, .toggle - buttons, list rows, filter pills, dropdown heads. A
+ *      dropdown head is a toggle with a caret; a menu row is a toggle in a panel.
+ *   3. DIVIDERS NEVER TOUCH THE CONTAINER EDGE. The signature detail: 15px inset on both ends,
+ *      and 2px thick - the same weight as every button border, because a 1px rule beside 2px
+ *      buttons reads as a different system rather than the same one.
+ *   4. SELECTION IS BRIGHT, REJECTION IS MUTED. --accent-on is near-white; --muted-on is dull.
+ *      Selected rows must re-state a dark colour on their children, or a light child vanishes
+ *      into a near-white ground.
+ *   5. TEXT STAYS SELECTABLE. user-select:none on controls also makes every name and readout
+ *      uncopyable, which costs more than the stray drag-select it prevents.
+ *   6. MONOSPACE THROUGHOUT, because these tools show filenames, counts and coordinates, and
+ *      those line up or they are not readable.
+ *
+ * Override by redefining the tokens below, not by fighting the rules. */
+
+:root {
+  --bg: #17171b;
+  --panel-row: #1e1e23;
+  --cream: #e8ddc3;
+  --grey-border: #4a4a52;
+  --text: #cfc9bd;
+  --text-dim: #8b8b90;
+  --accent-on: #fbf3dd;
+  --accent-on-text: #17171b;
+  /* a rejecting choice reads muted rather than bright: rejecting something is a decision, not an
+     achievement, and giving it the accent makes a wall of rejections look like a wall of wins */
+  --muted-on: #5c5650;
+  /* secondary text ON the accent ground - a dim grey that still reads as secondary against
+     near-white, where --text-dim would vanish */
+  --text-on-accent-dim: #6a655c;
+  /* THE ONLY TWO HUES IN THE SYSTEM, and both mean something rather than decorate.
+     SAMPLED FROM PHOTOGRAPHS of lichen and stone. Each started as the median of its photo
+     filtered to that hue band above 22%
+     saturation - the lichen and the stone themselves, not their blend with grey. The stone stayed
+     as measured; the lichen did not, and the block below says exactly how far it moved and why.
+     They replaced #6c6 and #d84, which were web shorthand sitting in an otherwise chosen palette. */
+  /* THE LICHEN IS CORRECTED, NOT SAMPLED, and the correction is the honest part. The photo's median
+     is #bcbf88, which is faithful to the PHOTO and not to the lichen: overcast light and
+     phone processing pulled saturation down, and no pixel in the image is both vibrant and pale -
+     the most saturated is dark (#6c6e3b, val 0.43), the brightest is washed (#fcfebb, sat 0.26).
+     Balthazar Fitzpatrick, who was there: "much more vibrant, like a pale lime, the photos dont do it justice".
+     So saturation is raised to 0.60 and hue nudged 62 -> 76 degrees on his eye against the real
+     thing. Sampling fixed the family; only the person who saw it could fix the rest. */
+  --lichen: #c7ed5f;          /* hue 76, sat 0.60, val 0.93. contrast 13.37 on --bg - carries text */
+  /* the same lichen dark enough to be a fill. NOT a bed for cream text - cream on it is 3.00, well
+     under the 4.5 text needs; 4.93 is its contrast against the GROUND, which an earlier comment
+     mislabelled. Put dark text on it, or use it as a bare fill. */
+  --lichen-deep: #788f39;     /* hue 76 held, val 0.56. 4.93 on --bg */
+  --stone-red: #996b62;       /* 39k px sampled. contrast 3.94 - a pip or a fill, NOT text */
+  /* DERIVED, not sampled: the stone is genuinely dull, which is the point of it, but 3.94 is under
+     the 4.5 a highlight needs when it carries text. Value lifted to 0.68 with the stone's own hue
+     (10deg) and saturation (0.36) held, so it is the same stone with the light on it. */
+  --stone-red-lift: #ad796f;  /* 4.89 on --bg */
+
+  /* the semantic layer points at them, so a consumer repalettes by moving the pointer without
+     losing the record of where the colour came from */
+  --status-good: var(--lichen);
+  --status-warn: var(--stone-red);
+  /* the "this really needs attention" slot. NOTHING USES IT BY DEFAULT - an attention colour that
+     is always on stops being one */
+  --attention: var(--stone-red-lift);
+  /* THE GLOBAL ROW HEIGHT. every row and every button in the app is this tall - the label popup's
+     rows set the standard and everything else matches it, so nothing reads as a different size
+     class. change it here and the whole app follows. */
+  --row-height: 31px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 13px/1.4 "SF Mono", Menlo, monospace;
+}
+
+/* ---- scrollbars: drawn, not borrowed ----
+   Balthazar Fitzpatrick: "I want to have a native scroll bar based on thin line with slider block kinda style on
+   it, the os overlay looks cheezy". macOS's overlay bar fades in over the content in a grey that
+   belongs to no palette; this is a track that is always there and a block that rides it. Square,
+   like everything else here - the only radius in this ui is the one deliberate `?` circle.
+
+   THE STANDARD PAIR IS WHAT ACTUALLY DRAWS THIS, measured rather than assumed: in Chromium 151
+   the ::-webkit-scrollbar pseudo-elements no longer render at all - an id-scoped
+   `::-webkit-scrollbar { width: 14px; background: red }` on an `overflow-y: scroll` box still
+   measured a 0px gutter and showed nothing. So scrollbar-width/scrollbar-color lead, and the
+   webkit block below is kept only for engines old enough to need it. Two things the standard
+   property cannot express and this therefore does not have: the 2px track line, and a thumb that
+   lightens to cream on hover - scrollbar-color has no hover state and its track is a fill. */
+* { scrollbar-width: thin; scrollbar-color: var(--grey-border) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track {
+  background: transparent;
+  /* the line the block rides, drawn as an inset border so it stays 2px like every other rule */
+  border-left: 2px solid var(--grey-border);
+}
+::-webkit-scrollbar-track:horizontal { border-left: none; border-top: 2px solid var(--grey-border); }
+::-webkit-scrollbar-thumb { background: var(--grey-border); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--cream); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+
+/* ---- toggle: the one clickable-control class used app-wide ---- */
+.toggle {
+  border: 2px solid var(--grey-border); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font: inherit; color: var(--text);
+  background: var(--panel-row); padding: 0 14px;
+  height: var(--row-height); box-sizing: border-box; flex: 0 0 auto;
+}
+.toggle:hover { border-color: var(--cream); color: var(--cream); }
+.toggle.on { background: var(--accent-on); color: var(--accent-on-text); }
+/* SELECTED CELLS SWAP TO GREY TEXT. the .on background is near-white, so any child that carries its
+   own light colour (a .name is cream, a .stats is a light grey) vanishes into it. children must
+   therefore re-state a dark colour rather than inherit their unselected one - primary text near
+   black, secondary a mid grey that still reads as secondary against cream. */
+.toggle.on .name { color: var(--accent-on-text); }
+.toggle.on .stats,
+.toggle.on .field-label,
+.toggle.on .stat { color: var(--text-on-accent-dim); }
+.toggle:disabled, .toggle.disabled { opacity: 0.4; cursor: not-allowed; }
+.toggle:disabled:hover, .toggle.disabled:hover {
+  border-color: var(--grey-border); color: var(--text);
+}
+
+.help-tip {
+  position: fixed; z-index: 60; max-width: 380px; line-height: 1.5;
+  background: var(--panel-row); border: 2px solid var(--grey-border);
+  padding: 10px 12px; color: var(--text-dim); font: inherit; font-size: 12px;
+}
+.help-tip[hidden] { display: none; }
+/* pinned reads as deliberate rather than incidental - the same cream the rest of the ui uses for
+   "this is the thing you chose" */
+.toggle.help.on { border-color: var(--cream); color: var(--cream); }
+.help-tip.pinned { border-color: var(--cream); }
+.toggle.on { background: var(--accent-on); color: var(--accent-on-text); }
+/* SELECTED CELLS SWAP TO GREY TEXT. the .on background is near-white, so any child that carries its
+   own light colour (a .name is cream, a .stats is a light grey) vanishes into it. children must
+   therefore re-state a dark colour rather than inherit their unselected one - primary text near
+   black, secondary a mid grey that still reads as secondary against cream. */
+.toggle.on .name { color: var(--accent-on-text); }
+.toggle.on .stats,
+.toggle.on .field-label,
+.toggle.on .stat { color: #6a655c; }
+
+
+/* ---- what a button DOES, in colour ---- */
+/* Only two verbs get a colour, because only two are worth stopping for: one adds to the training
+   set, one takes something away. Everything else stays grey on purpose - a palette where every
+   button is coloured is a palette that has stopped saying anything. The colour is on the BORDER
+   and the TEXT at rest and only fills on hover, so a row of buttons still reads as a row of
+   buttons rather than as a row of warnings. */
+.toggle.adds { border-color: var(--lichen-deep); color: var(--lichen); }
+.toggle.adds:hover { background: var(--lichen); border-color: var(--lichen); color: var(--bg); }
+.toggle.removes { border-color: var(--stone-red); color: var(--stone-red-lift); }
+.toggle.removes:hover {
+  background: var(--stone-red); border-color: var(--stone-red-lift); color: var(--cream);
+}
+/* the disabled rules come last so they win over both - a greyed button must look greyed whatever
+   verb it carries, which is the whole point of greying it */
+.toggle:disabled, .toggle.disabled { opacity: 0.4; cursor: not-allowed; }
+.toggle:disabled:hover, .toggle.disabled:hover {
+  border-color: var(--grey-border); color: var(--text); background: var(--panel-row);
+}
+
+
+/* ---- dividers: never touch the container's own edge - this is the signature detail ---- */
+/* 2px, the same as every .toggle border - a 1px rule beside 2px buttons reads as a
+   different weight of line rather than the same system */
+.divider { width: 0; border-left: 2px solid var(--grey-border); margin: 15px 0; }
+.h-divider { height: 0; border-top: 2px solid var(--grey-border); margin: 0 15px; }
+
+/* TEXT IS SELECTABLE. `user-select: none` used to sit on .toggle and .nav-tab to stop drag-select
+   while clicking through rows - but it also made every dataset name, script name and readout
+   uncopyable. Balthazar Fitzpatrick: "it seems to be a statically rendered image." Only the drag-to-align image
+   keeps it, where a drag really does mean something else. */
+
+/* ---- panels: floating gets the cream border, inline gets the plain grey one ---- */
+.panel-floating {
+  background: var(--panel-row); border: 2px solid var(--cream);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); padding: 14px;
+}
+.panel-inline {
+  background: var(--panel-row); border: 2px solid var(--grey-border); padding: 14px;
+}
+
+/* ---- focus: the popup's stepped cream glow, generalised to :focus-visible everywhere ---- */
+:focus-visible {
+  /* 2px, the same weight as every border in the system. this was a stacked 2+3+4px glow, which on
+     a control that is already 2px-bordered reads as a fat second border rather than as focus */
+  outline: none;
+  box-shadow: 0 0 0 2px var(--cream);
+}
+
+/* ---- column grouping primitive: label-columns + col + divider, used beyond the popup now ---- */
+.label-columns { display: flex; flex-direction: row; align-items: stretch; }
+/* PADDED ON BOTH AXES. horizontal-only padding left the buttons touching the frame the moment a
+   consumer drew a border on .label-columns itself rather than nesting it in a padded panel - a
+   primitive has to look right standing on its own */
+.label-columns .col { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; }
+
+/* ---- nav bar: ONE BAR, not a row of folder tabs ----
+   each tab used to be its own box with border-bottom removed, so the strip read as eight open
+   containers competing with the panels below it. one bordered bar with the active tab underlined
+   says the same thing with a single line, and the underline is the only cream on the strip. */
+#nav-bar {
+  display: flex; align-items: stretch; gap: 0;
+  margin: 10px 14px 0; border: 2px solid var(--grey-border);
+}
+.nav-tab {
+  padding: 0 20px; background: transparent; color: var(--text-dim);
+  border: none; cursor: pointer; height: var(--row-height);
+  display: flex; align-items: center; justify-content: center;
+  /* the underline is drawn as a border the tab always has, transparent until active - so
+     activating a tab never changes its height and the row does not shift under the cursor */
+  border-bottom: 3px solid transparent;
+}
+.nav-tab:hover { color: var(--cream); }
+.nav-tab.active { color: var(--cream); border-bottom-color: var(--cream); }
+
+.hidden { display: none !important; }
+
+/* ---- tree rows: a grouped, indentable list, from renderTree ----
+   THESE WERE ORPHANS. renderTree emits .tree-group, .tree-item, .dot and .coords, and the design
+   system styled none of them - the one consumer had its own rules, so the function rendered
+   correctly there and rendered as unstyled divs anywhere else. A framework that applies a class
+   owns its look; anything less is a copy waiting to be made. */
+.tree-group { padding: 8px 0 2px; }
+.tree-item { justify-content: flex-start; gap: 8px; white-space: nowrap; margin-bottom: 4px; }
+/* a status pip. THE ONE LEGITIMATE RADIUS in the system - a dot is a circle, which is not the
+   same thing as softening a rectangle that every other control keeps square */
+.tree-item .dot {
+  width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--grey-border);
+}
+.tree-item.marked .dot { background: var(--status-good); }
+.tree-item.needed .dot { background: var(--status-warn); }
+/* a trailing badge: secondary by definition, and pushed to the far edge so several rows' badges
+   line up as a column rather than trailing their own labels at ragged positions */
+.tree-item .coords { margin-left: auto; color: var(--text-dim); font-size: 11px; }
+.toggle.on .coords { color: var(--text-on-accent-dim); }
+
+/* the title a Menu draws above its sections */
+.popup-title { color: var(--cream); font-size: 12px; }
+
+/* ---- Menu (menu.js) ---------------------------------------------------------------
+   one floating panel for every dropdown, right-click menu and picker. the visual language is
+   the same .toggle/.h-divider/.label-columns the rest of the tool uses; this only adds the
+   layout those pieces need inside a panel. */
+/* a menu whose sections sit side by side, split by the same inset vertical rule as everywhere
+   else. each column scrolls on its own so a long list cannot stretch the panel past the viewport */
+/* wider than it was: these rows carry a recording name AND its counts side by side, and at 820 the
+   name had so little room after the stats that every row ellipsised to a few characters */
+.menu-panel.menu-columns { max-width: min(1040px, 94vw); }
+.menu-column-row { display: flex; align-items: stretch; min-height: 0; flex: 1 1 auto; }
+.menu-column-row > .menu-section { flex: 1 1 0; min-width: 320px; max-height: 60vh; overflow-y: auto; }
+
+/* the panel takes focus when it opens, so it must not inherit the focus ring - that ring is for a
+   keyboard user who tabbed somewhere, not for a menu appearing where it was asked to */
+.menu-panel:focus, .menu-panel:focus-visible { outline: none; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); }
+
+.menu-panel {
+  /* FIXED, or it lands at the bottom of the page. .panel-floating carries only the border and
+     background - every popup this replaced declared its own position, and dropping those rules
+     left the panel in normal document flow at the end of <body> */
+  position: fixed; z-index: 40;
+  display: flex; flex-direction: column; gap: 0;
+  min-width: 180px; max-width: min(560px, 92vw);
+  /* THE PANEL IS BOUNDED, THE BODY IS WHAT SCROLLS. this used to be overflow-y:auto on the panel
+     itself, so a long list scrolled its own title and apply button out of view on the way down */
+  max-height: 70vh; overflow: hidden;
+}
+/* min-height:0 or it refuses to shrink below its content in the flex column, which is the one rule
+   that makes the difference between the body scrolling and the panel growing past the viewport */
+.menu-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* THE COLLAPSED HALF OF A DROPDOWN. it is the part you click, so it keeps ONE width whatever it
+   holds - the panel below it is free to be wider for long names or several columns, which is how
+   a dropdown behaves everywhere else. without this the head stretched to its content and the cnn's
+   was several times the width of the interface tab's. */
+.dropdown-head {
+  min-width: 190px; max-width: 190px;
+  justify-content: space-between; gap: 8px;
+  overflow: hidden; white-space: nowrap;
+}
+.dropdown-head > span:first-child {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dropdown-head::after {
+  content: "\25be"; flex: none; color: var(--text-dim); font-size: 10px; line-height: 1;
+}
+.dropdown-head.open::after { color: var(--cream); }
+/* a percentage is two or three characters - a 190px head for "20%" reads as a broken layout */
+.dropdown-head.narrow { min-width: 74px; max-width: 74px; }
+.menu-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px; }
+.menu-section .field-label { padding: 0; }
+.menu-item { display: flex; align-items: center; gap: 12px; width: auto; justify-content: flex-start; }
+/* THE NAME IS WHAT TRUNCATES, NOT THE STATS, and it used to be the other way round. the name was
+   flex:0 0 auto so it never shrank - a long recording name pushed the row past the panel and the
+   stats, being the only shrinkable thing in it, were squeezed to nothing. the stats are the reason
+   you are reading the row at all, so they hold their width and the name gives way. full text of
+   both is on the row's title */
+.menu-item .name {
+  flex: 0 1 auto; min-width: 3em; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* margin-left:auto pins them to the RIGHT EDGE, so the numbers line up down the list instead of
+   starting wherever each name happens to end. the max-width is a backstop for a narrow panel */
+.menu-item .stats {
+  flex: 0 0 auto; margin-left: auto; max-width: 60%;
+  color: var(--text-dim); font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.menu-item .menu-action {
+  flex: 0 0 auto; padding: 0 8px; border: 1px solid var(--grey-border); border-radius: 2px;
+  font-size: 11px; color: var(--text-dim);
+}
+.menu-item .menu-action:hover { border-color: var(--cream); color: var(--cream); }
+.menu-add { display: flex; gap: 6px; align-items: center; }
+.menu-add input { flex: 1 1 auto; min-width: 0; }
+
+/* A TEXT FIELD IS A CONTROL, so it obeys the same rules as every other one. tabs.css styled this
+   with a 1px border, a 3px radius, a hardcoded grey and a fixed 230px width - four of the six rules
+   broken at once, and it read as a foreign widget dropped into the panel. The visible half was
+   being a different height from the button beside it. */
+.text-field {
+  height: var(--row-height); box-sizing: border-box;
+  background: var(--bg); color: var(--text);
+  border: 2px solid var(--grey-border); padding: 0 10px;
+  font: inherit; min-width: 0;
+}
+.text-field:focus { outline: none; border-color: var(--cream); color: var(--cream); }
+.text-field::placeholder { color: var(--text-dim); opacity: 1; }
+.menu-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.menu-section .none { color: var(--text-dim); font-size: 12px; font-style: italic; }
+.menu-item:focus { outline: none; border-color: var(--cream); color: var(--cream); }
+
+
+/* ---- rubber band: the net a shift+drag draws over the tile grid ----
+   fixed-positioned in viewport coordinates, the same frame the hit test runs in, and never a
+   target for the pointer it is chasing. cream at 2px, like every other border in the system. */
+.rubber-band {
+  position: fixed; z-index: 30; pointer-events: none;
+  border: 2px solid var(--cream); background: rgba(232, 221, 195, 0.12);
+}
+
+
+/* ---- modal: the one popup that is NOT anchored to what opened it ----
+   every menu in this tool hangs off its trigger, which is right for a choice you can walk away
+   from. a modal is for the other kind - overwrite or merge a training set - so it takes the middle
+   of the screen behind a dim, and clicking away does not answer it. */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-dialog {
+  display: flex; flex-direction: column; gap: 12px;
+  min-width: 340px; max-width: min(520px, 92vw);
+}
+.modal-body { color: var(--text); font-size: 12px; line-height: 1.6; }
+/* the harmless answer sits last and the destructive one is not first - a dialogue where the
+   leftmost button destroys something is a dialogue that gets dismissed into a data loss */
+.modal-buttons { justify-content: flex-end; }
+
+
+/* ---- slider (menu.js makeSlider) ---------------------------------------------------
+   a cream pipe riding an axis with ticks, its ends labelled and the current value under the
+   handle. built on <input type=range> so keyboard and accessibility come free; everything below
+   is the appearance. */
+.slider { display: flex; flex-direction: column; gap: 4px; min-width: 190px; }
+.slider-label { padding: 0; }
+.slider-axis {
+  position: relative; height: 22px; display: flex; align-items: center;
+  /* the axis line, with ticks every 10% drawn over it */
+  background:
+    repeating-linear-gradient(to right,
+      var(--grey-border) 0 1px, transparent 1px 10%) center / 100% 9px no-repeat,
+    linear-gradient(var(--grey-border), var(--grey-border)) center / 100% 1px no-repeat;
+}
+.slider-axis input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer;
+}
+.slider-axis input[type="range"]::-webkit-slider-runnable-track { background: transparent; height: 22px; }
+.slider-axis input[type="range"]::-moz-range-track { background: transparent; height: 22px; }
+/* THE PIPE. 5px of cream, full height of the axis - the one bright thing in the control */
+.slider-axis input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 5px; height: 18px;
+  background: var(--cream); border: none; cursor: ew-resize;
+}
+.slider-axis input[type="range"]::-moz-range-thumb {
+  width: 5px; height: 18px;
+  background: var(--cream); border: none; cursor: ew-resize;
+}
+.slider-axis input[type="range"]:focus { outline: none; }
+.slider-axis input[type="range"]:focus::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-row); }
+.slider-ends {
+  position: relative; display: flex; justify-content: space-between;
+  font-size: 10.5px; color: var(--text-dim); font-variant-numeric: tabular-nums;
+}
+/* the readout rides under the handle rather than sitting in the middle */
+.slider-ends .slider-value {
+  position: absolute; transform: translateX(-50%); color: var(--cream); font-size: 11.5px;
+}
+
+/* the two populations behind a slider's axis: what the model answers ON a target, and everywhere
+   else. each is scaled to its own peak, so a handful of strong responses stays visible against
+   hundreds of thousands of background cells. */
+/* 2.5% buckets over the slider, and the bar stands on nothing: no track, no border, just the bar.
+   the bars are thinner than a loading bar's height because there are forty of them across the same
+   axis - the width follows the bucket count, the height does not. */
+.slider-dist { display: none; height: 34px; align-items: flex-end; padding: 0 0 2px; }
+.slider-dist.has-data { display: flex; }
+.slider-bin { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.slider-bin span { display: block; width: 4px; background: var(--cream); opacity: 0.75; }
+
+/* ---- the sweep row: the recording name takes the slack, the rest sits right ---- */
+.sweep-row { display: flex; align-items: center; gap: 10px; }
+.sweep-row .grow { flex: 1 1 auto; min-width: 0; justify-content: space-between; }
+.sweep-row .grow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

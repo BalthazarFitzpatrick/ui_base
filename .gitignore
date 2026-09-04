@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+.DS_Store
+
+# working ledgers - kept locally and in a private notes repo, never in a public one
+TASKS.jsonl
+WORKLOG.md
+demo_shots/
