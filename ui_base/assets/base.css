@@ -78,6 +78,32 @@ body {
   font: 13px/1.4 "SF Mono", Menlo, monospace;
 }
 
+/* ---- scrollbars: drawn, not borrowed ----
+   Fabian: "I want to have a native scroll bar based on thin line with slider block kinda style on
+   it, the os overlay looks cheezy". macOS's overlay bar fades in over the content in a grey that
+   belongs to no palette; this is a track that is always there and a block that rides it. Square,
+   like everything else here - the only radius in this ui is the one deliberate `?` circle.
+
+   THE STANDARD PAIR IS WHAT ACTUALLY DRAWS THIS, measured rather than assumed: in Chromium 151
+   the ::-webkit-scrollbar pseudo-elements no longer render at all - an id-scoped
+   `::-webkit-scrollbar { width: 14px; background: red }` on an `overflow-y: scroll` box still
+   measured a 0px gutter and showed nothing. So scrollbar-width/scrollbar-color lead, and the
+   webkit block below is kept only for engines old enough to need it. Two things the standard
+   property cannot express and this therefore does not have: the 2px track line, and a thumb that
+   lightens to cream on hover - scrollbar-color has no hover state and its track is a fill. */
+* { scrollbar-width: thin; scrollbar-color: var(--grey-border) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track {
+  background: transparent;
+  /* the line the block rides, drawn as an inset border so it stays 2px like every other rule */
+  border-left: 2px solid var(--grey-border);
+}
+::-webkit-scrollbar-track:horizontal { border-left: none; border-top: 2px solid var(--grey-border); }
+::-webkit-scrollbar-thumb { background: var(--grey-border); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--cream); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+
 /* ---- toggle: the one clickable-control class used app-wide ---- */
 .toggle {
   border: 2px solid var(--grey-border); cursor: pointer;
@@ -100,6 +126,47 @@ body {
 .toggle:disabled:hover, .toggle.disabled:hover {
   border-color: var(--grey-border); color: var(--text);
 }
+
+.help-tip {
+  position: fixed; z-index: 60; max-width: 380px; line-height: 1.5;
+  background: var(--panel-row); border: 2px solid var(--grey-border);
+  padding: 10px 12px; color: var(--text-dim); font: inherit; font-size: 12px;
+}
+.help-tip[hidden] { display: none; }
+/* pinned reads as deliberate rather than incidental - the same cream the rest of the ui uses for
+   "this is the thing you chose" */
+.toggle.help.on { border-color: var(--cream); color: var(--cream); }
+.help-tip.pinned { border-color: var(--cream); }
+.toggle.on { background: var(--accent-on); color: var(--accent-on-text); }
+/* SELECTED CELLS SWAP TO GREY TEXT. the .on background is near-white, so any child that carries its
+   own light colour (a .name is cream, a .stats is a light grey) vanishes into it. children must
+   therefore re-state a dark colour rather than inherit their unselected one - primary text near
+   black, secondary a mid grey that still reads as secondary against cream. */
+.toggle.on .name { color: var(--accent-on-text); }
+.toggle.on .stats,
+.toggle.on .field-label,
+.toggle.on .stat { color: #6a655c; }
+
+
+/* ---- what a button DOES, in colour ---- */
+/* Only two verbs get a colour, because only two are worth stopping for: one adds to the training
+   set, one takes something away. Everything else stays grey on purpose - a palette where every
+   button is coloured is a palette that has stopped saying anything. The colour is on the BORDER
+   and the TEXT at rest and only fills on hover, so a row of buttons still reads as a row of
+   buttons rather than as a row of warnings. */
+.toggle.adds { border-color: var(--lichen-deep); color: var(--lichen); }
+.toggle.adds:hover { background: var(--lichen); border-color: var(--lichen); color: var(--bg); }
+.toggle.removes { border-color: var(--stone-red); color: var(--stone-red-lift); }
+.toggle.removes:hover {
+  background: var(--stone-red); border-color: var(--stone-red-lift); color: var(--cream);
+}
+/* the disabled rules come last so they win over both - a greyed button must look greyed whatever
+   verb it carries, which is the whole point of greying it */
+.toggle:disabled, .toggle.disabled { opacity: 0.4; cursor: not-allowed; }
+.toggle:disabled:hover, .toggle.disabled:hover {
+  border-color: var(--grey-border); color: var(--text); background: var(--panel-row);
+}
+
 
 /* ---- dividers: never touch the container's own edge - this is the signature detail ---- */
 /* 2px, the same as every .toggle border - a 1px rule beside 2px buttons reads as a
@@ -186,9 +253,11 @@ body {
    layout those pieces need inside a panel. */
 /* a menu whose sections sit side by side, split by the same inset vertical rule as everywhere
    else. each column scrolls on its own so a long list cannot stretch the panel past the viewport */
-.menu-panel.menu-columns { max-width: min(820px, 94vw); }
-.menu-column-row { display: flex; align-items: stretch; min-height: 0; }
-.menu-column-row > .menu-section { flex: 1 1 0; min-width: 210px; max-height: 60vh; overflow-y: auto; }
+/* wider than it was: these rows carry a recording name AND its counts side by side, and at 820 the
+   name had so little room after the stats that every row ellipsised to a few characters */
+.menu-panel.menu-columns { max-width: min(1040px, 94vw); }
+.menu-column-row { display: flex; align-items: stretch; min-height: 0; flex: 1 1 auto; }
+.menu-column-row > .menu-section { flex: 1 1 0; min-width: 320px; max-height: 60vh; overflow-y: auto; }
 
 /* the panel takes focus when it opens, so it must not inherit the focus ring - that ring is for a
    keyboard user who tabbed somewhere, not for a menu appearing where it was asked to */
@@ -201,8 +270,13 @@ body {
   position: fixed; z-index: 40;
   display: flex; flex-direction: column; gap: 0;
   min-width: 180px; max-width: min(560px, 92vw);
-  max-height: 70vh; overflow-y: auto;
+  /* THE PANEL IS BOUNDED, THE BODY IS WHAT SCROLLS. this used to be overflow-y:auto on the panel
+     itself, so a long list scrolled its own title and apply button out of view on the way down */
+  max-height: 70vh; overflow: hidden;
 }
+/* min-height:0 or it refuses to shrink below its content in the flex column, which is the one rule
+   that makes the difference between the body scrolling and the panel growing past the viewport */
+.menu-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 
 /* THE COLLAPSED HALF OF A DROPDOWN. it is the part you click, so it keeps ONE width whatever it
    holds - the panel below it is free to be wider for long names or several columns, which is how
@@ -225,29 +299,34 @@ body {
 .menu-section { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px; }
 .menu-section .field-label { padding: 0; }
 .menu-item { display: flex; align-items: center; gap: 12px; width: auto; justify-content: flex-start; }
-.menu-item .name { text-align: left; }
-/* the stats can be long - a training set names every class it holds - so it truncates rather than
-   running past the panel edge. the full text is on the row's title */
-.menu-item .stats {
-  flex: 0 1 auto; min-width: 0; color: var(--text-dim); font-size: 11px;
+/* THE NAME IS WHAT TRUNCATES, NOT THE STATS, and it used to be the other way round. the name was
+   flex:0 0 auto so it never shrank - a long recording name pushed the row past the panel and the
+   stats, being the only shrinkable thing in it, were squeezed to nothing. the stats are the reason
+   you are reading the row at all, so they hold their width and the name gives way. full text of
+   both is on the row's title */
+.menu-item .name {
+  flex: 0 1 auto; min-width: 3em; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.menu-item .name { flex: 0 0 auto; }
+/* margin-left:auto pins them to the RIGHT EDGE, so the numbers line up down the list instead of
+   starting wherever each name happens to end. the max-width is a backstop for a narrow panel */
+.menu-item .stats {
+  flex: 0 0 auto; margin-left: auto; max-width: 60%;
+  color: var(--text-dim); font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .menu-item .menu-action {
-  /* 2px and square like every other control - a 1px rounded pill beside 2px square buttons reads
-     as a different system, which is rule 3 and the reason it is a rule */
-  flex: 0 0 auto; padding: 0 8px; border: 2px solid var(--grey-border);
+  flex: 0 0 auto; padding: 0 8px; border: 1px solid var(--grey-border); border-radius: 2px;
   font-size: 11px; color: var(--text-dim);
 }
 .menu-item .menu-action:hover { border-color: var(--cream); color: var(--cream); }
 .menu-add { display: flex; gap: 6px; align-items: center; }
 .menu-add input { flex: 1 1 auto; min-width: 0; }
 
-/* A TEXT FIELD IS A CONTROL, so it obeys the same rules as every other one. This class was applied
-   by the menu code and styled nowhere in the design system - the one place that did style it used
-   a 1px border, a 3px radius, a hardcoded grey and a fixed 230px width, breaking four of the six
-   rules at once, and it read as a foreign widget dropped into the panel. Matching the row height
-   of the button beside it is the visible half; the rest is why it stops looking borrowed. */
+/* A TEXT FIELD IS A CONTROL, so it obeys the same rules as every other one. tabs.css styled this
+   with a 1px border, a 3px radius, a hardcoded grey and a fixed 230px width - four of the six rules
+   broken at once, and it read as a foreign widget dropped into the panel. The visible half was
+   being a different height from the button beside it. */
 .text-field {
   height: var(--row-height); box-sizing: border-box;
   background: var(--bg); color: var(--text);
@@ -255,12 +334,39 @@ body {
   font: inherit; min-width: 0;
 }
 .text-field:focus { outline: none; border-color: var(--cream); color: var(--cream); }
-/* a placeholder must read as a PROMPT, not as content - dim enough to be obviously not a value,
-   legible enough to say what belongs there */
 .text-field::placeholder { color: var(--text-dim); opacity: 1; }
 .menu-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 .menu-section .none { color: var(--text-dim); font-size: 12px; font-style: italic; }
 .menu-item:focus { outline: none; border-color: var(--cream); color: var(--cream); }
+
+
+/* ---- rubber band: the net a shift+drag draws over the tile grid ----
+   fixed-positioned in viewport coordinates, the same frame the hit test runs in, and never a
+   target for the pointer it is chasing. cream at 2px, like every other border in the system. */
+.rubber-band {
+  position: fixed; z-index: 30; pointer-events: none;
+  border: 2px solid var(--cream); background: rgba(232, 221, 195, 0.12);
+}
+
+
+/* ---- modal: the one popup that is NOT anchored to what opened it ----
+   every menu in this tool hangs off its trigger, which is right for a choice you can walk away
+   from. a modal is for the other kind - overwrite or merge a training set - so it takes the middle
+   of the screen behind a dim, and clicking away does not answer it. */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-dialog {
+  display: flex; flex-direction: column; gap: 12px;
+  min-width: 340px; max-width: min(520px, 92vw);
+}
+.modal-body { color: var(--text); font-size: 12px; line-height: 1.6; }
+/* the harmless answer sits last and the destructive one is not first - a dialogue where the
+   leftmost button destroys something is a dialogue that gets dismissed into a data loss */
+.modal-buttons { justify-content: flex-end; }
+
 
 /* ---- slider (menu.js makeSlider) ---------------------------------------------------
    a cream pipe riding an axis with ticks, its ends labelled and the current value under the
