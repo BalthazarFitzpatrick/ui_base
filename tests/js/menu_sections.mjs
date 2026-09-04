@@ -7,7 +7,11 @@ import assert from 'node:assert/strict';
 function element(tag) {
   const el = {
     tag, className: '', textContent: '', innerHTML: '', title: '',
-    dataset: {}, children: [], onclick: null,
+    dataset: {}, children: [], onclick: null, style: {}, tabIndex: 0,
+    replaceWith() {},
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    getBoundingClientRect: () => ({left: 0, top: 0, bottom: 0, right: 0, width: 0, height: 0}),
     appendChild(child) { this.children.push(child); return child; },
     append(...kids) { kids.forEach(k => this.children.push(k)); },
     classList: {
@@ -106,5 +110,24 @@ rows[0].onclick();
 rows[1].onclick();
 assert.equal(leftPicked, 'l1');
 assert.equal(rightPicked, 'r1');
+
+// ---- refresh swaps the panel's content without moving it
+const live = new Menu({title: 't', sections: [{kind: 'list', items: [{id: 'a', label: 'a'}]}]});
+live.el = live._build();
+live.el.style = {left: '120px', top: '40px'};
+let replacedWith = null;
+live.el.replaceWith = node => { replacedWith = node; };
+live.refresh([{kind: 'list', items: [{id: 'b', label: 'b'}]}]);
+assert.ok(replacedWith, 'refresh should replace the panel element');
+assert.equal(live.el, replacedWith, 'and adopt the rebuilt one');
+assert.equal(live.el.style.left, '120px', 'a refresh must not move the panel');
+assert.equal(live.el.style.top, '40px');
+const names = walk(live.el).filter(n => n.className.includes('menu-item'))
+  .map(n => n.innerHTML.match(/>([^<]*)</)[1]);
+assert.deepEqual(names, ['b'], 'refresh should render the sections it was given');
+
+// ---- refresh on a menu that was never opened is a no-op rather than a crash
+const unopened = new Menu({sections: []});
+unopened.refresh([{kind: 'list', items: []}]);
 
 console.log('ok');

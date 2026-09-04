@@ -97,6 +97,9 @@ any flag means:
 // -> <div class="toggle menu-item done">
 ```
 
+`menu.refresh(sections)` rebuilds an open menu in place, keeping its position — for columns that
+move items between themselves as you pick, where closing and reopening would flicker.
+
 Note `multi` defaults to **true** inside a `columns` section and **false** in a `list`. A
 single-select pick closes the whole menu, including the other columns.
 

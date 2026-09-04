@@ -226,6 +226,24 @@ class Menu {
     return el;
   }
 
+  // REBUILD IN PLACE, keeping the panel where it is. A menu whose columns MOVE items between
+  // themselves - available on one side, open on the other - has to redraw when you pick, and the
+  // alternatives are both wrong: close-and-reopen flickers and loses the scroll, while mutating
+  // the two columns by hand puts the layout in the caller and lets it drift from _section.
+  //
+  // The position is kept deliberately. Re-anchoring would let the panel jump as its content grows
+  // or shrinks, which is exactly the moment you are reading it.
+  refresh(sections) {
+    if (!this.el) return;
+    if (sections) this.sections = sections;
+    const {left, top} = this.el.style;
+    const rebuilt = this._build();
+    rebuilt.style.left = left;
+    rebuilt.style.top = top;
+    this.el.replaceWith(rebuilt);
+    this.el = rebuilt;
+  }
+
   // a multi-select menu's apply button lives or dies by what is ticked, and only the caller knows
   // when that changed - so it says so rather than the class re-deriving it
   setButtonEnabled(id, on) {
