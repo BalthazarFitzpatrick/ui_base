@@ -184,6 +184,8 @@ def test_there_is_exactly_one_font_size():
         for line in css.splitlines()
         if "font-size" in line and "--font-size" not in line
     ]
+    # body may reference the token; nothing else may set a size at all
+    local = [line for line in local if "var(--font-size)" not in line]
     assert not local, f"font-size set locally: {local}"
     assert re.search(r"--font-size\s*:", css), "the one size must be a token"
 

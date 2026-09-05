@@ -68,7 +68,6 @@
   /* THE GLOBAL ROW HEIGHT. every row and every button in the app is this tall - the label popup's
      rows set the standard and everything else matches it, so nothing reads as a different size
      class. change it here and the whole app follows. */
-  --
   /* ONE SIZE. see the note by `body` - emphasis is colour and position here, not size */
   --font-size: 13px;
   --row-height: 31px;
@@ -91,7 +90,9 @@
 html, body { height: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
-  font: var(--font-size)/1.4 "SF Mono", Menlo, monospace;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: var(--font-size);
+  line-height: 1.4;
 }
 
 /* ONE SIZE, EVERYWHERE. There were nine between 10px and 13px - a label here, a stat there, a
